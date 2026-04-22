@@ -7,37 +7,39 @@ import toast from 'react-hot-toast';
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
-    const [step, setStep] = useState(1); // 1 for email, 2 for OTP/password
+    const [step, setStep] = useState(1); // 1 for contact, 2 for OTP/password
     const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState('');
+    
+    const [identifier, setIdentifier] = useState('');
     const [otp, setOtp] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-
-
 
     const handleSendOtp = async (e) => {
         e.preventDefault();
         try {
             setLoading(true);
-            const res = await axios.post('http://localhost:8080/api/v1/user/forgot-password', { email });
+            const res = await axios.post('http://localhost:8080/api/v1/user/forgot-password', { 
+                contact: identifier 
+            });
             setLoading(false);
             if (res.data.success) {
                 message.success(res.data.message);
-                toast.success("OPT is Send!");
-                setStep(2); // Move to the next step
+                toast.success("OTP has been sent!");
+                setStep(2); 
             } else {
-                toast.error("Something went wrong. Please try again!");
+                toast.error(res.data.message || "Account not found!");
             }
         } catch (error) {
             setLoading(false);
-            toast.error('Something went wrong');
+            const errorMsg = error.response?.data?.message || "Something went wrong";
+            toast.error(errorMsg);
         }
     };
 
     const handleResetPassword = async (e) => {
         e.preventDefault();
-        const payload = { email, otp, password };
+        const payload = { contact: identifier, otp, password };
         try {
             setLoading(true);
             const res = await axios.post('http://localhost:8080/api/v1/user/reset-password-otp', payload);
@@ -46,12 +48,11 @@ const ForgotPassword = () => {
                 toast.success("Password Reset Successfully!");
                 navigate('/');
             } else {
-                message.error(res.data.message);
-                toast.error("Password is not Reset!");
+                toast.error(res.data.message || "Failed to reset password");
             }
         } catch (error) {
             setLoading(false);
-            toast.error('Something went wrong');
+            toast.error(error.response?.data?.message || 'Something went wrong');
         }
     };
 
@@ -67,28 +68,30 @@ const ForgotPassword = () => {
                         Reset Your Password
                     </h2>
                     <p className="mt-2 text-sm text-slate-600">
-                        {step === 1 ? "Enter your email to receive a verification code." : `An OTP has been sent to ${email}.`}
+                        {step === 1 
+                            ? "Enter your email or phone number to receive a verification code." 
+                            : `An OTP has been sent to ${identifier}.`}
                     </p>
                 </div>
 
-                {/* Step 1: Enter Email */}
+                {/* Step 1: Enter Email or Phone */}
                 {step === 1 && (
                     <form className="space-y-6" onSubmit={handleSendOtp}>
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-slate-700">
-                                Email address
+                            <label htmlFor="identifier" className="block text-sm font-medium text-slate-700">
+                                Email or Phone Number
                             </label>
                             <div className="mt-1">
                                 <input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    autoComplete="email"
+                                    id="identifier"
+                                    name="identifier"
+                                    
+                                    type="text"
                                     required
                                     className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                                    placeholder="you@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="Enter your email or phone no."
+                                    value={identifier}
+                                    onChange={(e) => setIdentifier(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -108,16 +111,16 @@ const ForgotPassword = () => {
                 {step === 2 && (
                     <form className="space-y-6" onSubmit={handleResetPassword}>
                         <div>
-                            <label htmlFor="otp" className="block text-sm font-medium text-slate-700">6-Digit OTP</label>
+                            <label htmlFor="otp" className="block text-sm font-medium text-slate-700">Enter 6-Digit OTP</label>
                             <input
                                 id="otp" type="text" maxLength="6" required
                                 className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-center tracking-[0.5em]"
-                                placeholder="_ _ _ _ _ _"
+                                placeholder="· · · · · ·"
                                 value={otp} onChange={(e) => setOtp(e.target.value)}
                             />
                         </div>
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-slate-700">New Password</label>
+                            <label htmlFor="password" className="block text-sm font-medium text-slate-700">Create your New Password</label>
                             <div className="mt-1 relative">
                                 <input
                                     id="password" type={showPassword ? 'text' : 'password'} required

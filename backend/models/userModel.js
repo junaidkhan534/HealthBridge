@@ -1,19 +1,27 @@
-// appointy-backend/models/userModel.js
-
 const mongoose = require('mongoose');
 const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
     name: { type: String, required: [true, 'Name is required'] },
     email: { 
-        type: String,
-        required: [true, 'Email is required'],
-        unique: true,
-        match: [
+    type: String,
+    required: false, 
+    unique: true,
+    sparse: true, 
+    trim: true,
+    match: [
         /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
         "Please enter a valid email address",
-        ], 
-    },
+    ], 
+}, 
+phone: { 
+    type: String, 
+    required: false,
+    unique: true,
+    sparse: true, 
+    trim: true,
+    match: [/^\d{10}$/, "Please enter a valid 10-digit phone number"]
+},
     password: { 
         type: String,
         required: [true, 'Password is required'],
@@ -27,16 +35,12 @@ const userSchema = new mongoose.Schema({
     },
 
     available: { type: Boolean, default: true },
-    // Verification & Reset
     isVerified: { type: Boolean, default: false },
     otp: String,
     otpExpires: Date,
-    // passwordResetToken: String,
-    // passwordResetExpires: Date,
-    
+
     // Common Profile Fields
     profilePicture: { type: String, default: '' },
-    phone: { type: String },
     address: { type: String },
     dob: { type: String },
     gender: { 
@@ -48,18 +52,18 @@ const userSchema = new mongoose.Schema({
     bloodGroup: { 
         type: String,
         enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown"],
-        required: false, // allow skipping
+        required: false, 
         default: null  
      },
 
     
     // Doctor-specific fields
     
-    doctorId: { type: String, unique: true, sparse: true }, // sparse allows null values to not violate unique rule
+    doctorId: { type: String, unique: true, sparse: true },
     specialty: { type: String },
     qualifications: { type: String },
-    experience: { type: Number }, // Must be a Number
-    fees: { type: Number },       // Must be a Number
+    experience: { type: Number },
+    fees: { type: Number },       
     bio: { type: String },
     availableDays: [
       {
@@ -82,15 +86,6 @@ timings: {
     }],
     default: []
 },
-   
-    // timings: {
-    //     type: [{
-    //         start: { type: String },
-    //         end: { type: String }
-    //     }],
-    //     default: []
-    // },
-    // status: { type: String, default: 'approved' },
 
     // Admin-specific field
     isAdmin: { type: Boolean, default: false },
@@ -98,7 +93,6 @@ timings: {
     seennotification: { type: Array, default: [] }
 }, { timestamps: true });
 
-// Pre-save hook to update isAdmin based on role
 userSchema.pre('save', function (next) {
     if (this.isModified('role') && this.role === 'admin') {
         this.isAdmin = true;

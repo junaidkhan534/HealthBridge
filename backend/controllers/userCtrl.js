@@ -2,72 +2,111 @@ const userModel = require('../models/userModel');
 const appointmentModel = require('../models/appointmentModel');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const sendEmail = require('../utils/email'); // Import email utility
+const sendEmail = require('../utils/email'); 
+const twilio = require('twilio');
+const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
 
-// Register Controller - Now sends OTP
+// Register
 const registerController = async (req, res) => {
+    let newUser;
     try {
-        const { name, email, password, role } = req.body;
+        const { name, contact, password } = req.body;
 
-        const existingUser = await userModel.findOne({ email });
-        if (existingUser) {
+        // Identify Input Type
+        const isEmail = contact.includes('@');
+        const isPhone = /^[6-9]\d{9}$/.test(contact);
+
+        if (!isEmail && !isPhone) {
             return res.status(400).send({
                 success: false,
-                message: 'User with this email already exists',
+                message: 'Please enter a valid Email or 10-digit Phone Number',
             });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // --- START: Patient ID Generation ---
-        // Generate a unique patient ID (e.g., PT-123456)
-        const patientId = `PT-${Date.now().toString().slice(-6)}`;
-        // --- END: Patient ID Generation ---
-        console.log(patientId);
-        const newUser = new userModel({
-            name,
-            email,
-            password: hashedPassword,
-            role: 'patient',
-            patientId: patientId // Save the new ID
+        // Check for Existing User 
+        const existingUser = await userModel.findOne({ 
+            $or: [{ email: contact }, { phone: contact }] 
         });
 
-        // Generate and save OTP
+        if (existingUser) {
+            return res.status(400).send({
+                success: false,
+                message: 'Account with this Email or Phone already exists',
+            });
+        }
+
+        // Security & ID Generation
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const patientId = `PT-${Date.now().toString().slice(-6)}`;
+
+        // Create & Save User
+        newUser = new userModel({
+            name,
+            password: hashedPassword,
+            role: 'patient',
+            patientId: patientId,
+            [isEmail ? 'email' : 'phone']: contact 
+        });
+
         const otp = newUser.createOtp();
         await newUser.save();
 
-        // Send OTP to user's email
-        const message = `<p>Hi ${name},</p>
-                         <p>Your One-Time Password (OTP) is:</p>
-                         <h2><strong>${otp}</strong></h2>`;
-
-        await sendEmail({
-            email: newUser.email,
-            subject: 'Your HealthBridge Verification OTP',
-            html: message,
-        });
+        // OTP 
+        if (isEmail) {
+            await sendEmail({
+                email: newUser.email,
+                subject: 'HealthBridge Verification OTP',
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee;">
+                        <h2>HealthBridge Verification</h2>
+                        <p>Hi ${name}, Your OTP for account verification is:</p>
+                        <h1 style="letter-spacing: 5px;">${otp}</h1>
+                    </div>
+                `,
+            });
+        } else {
+            try {
+                await client.messages.create({
+                    body: `Your HealthBridge verification code is: ${otp}. Valid for 10 minutes.`,
+                    from: process.env.TWILIO_PHONE_NUMBER,
+                    to: `+91${contact}`
+                });
+                console.log(`✅ Twilio OTP sent to +91${contact}`);
+            } catch (twilioError) {
+                console.warn(`TWILIO FAIL-SAFE: Number +91${contact} is likely unverified.`);
+                console.warn(`FOR DEMO, USE THIS OTP: ${otp}`);
+            }
+        }
 
         res.status(201).send({
             success: true,
-            message: `OTP sent successfully to ${newUser.email}. Please verify your account.`,
+            message: `OTP sent successfully to ${contact}.`,
         });
 
     } catch (error) {
-        console.error(error);
+        if (newUser && newUser._id) {
+            await userModel.findByIdAndDelete(newUser._id);
+        }
+
+        console.error("Registration Error:", error);
         res.status(500).send({
             success: false,
-            message: `Error in Register Controller: ${error.message}`,
+            message: `Registration failed: ${error.message}`,
         });
     }
 };
 
-// Verify OTP Controller
 const verifyOtpController = async (req, res) => {
     try {
-        const { email, otp } = req.body;
-        const user = await userModel.findOne({ email, otp, otpExpires: { $gt: Date.now() } });
+        const { contact, otp } = req.body;
+
+        const user = await userModel.findOne({
+            $or: [{ email: contact }, { phone: contact }],
+            otp,
+            otpExpires: { $gt: Date.now() }
+        });
 
         if (!user) {
             return res.status(400).send({
@@ -82,19 +121,20 @@ const verifyOtpController = async (req, res) => {
         user.otpExpires = undefined;
         await user.save();
         
-        // Create JWT token for immediate login after verification
+        // Create JWT token for immediate login
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
             expiresIn: '1d',
         });
 
         res.status(200).send({
             success: true,
-            message: 'Email verified successfully! You are now logged in.',
+            message: 'Account verified successfully! You are now logged in.',
             token,
             user: {
                 id: user._id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone, 
                 role: user.role,
             },
         });
@@ -109,53 +149,72 @@ const verifyOtpController = async (req, res) => {
 };
 
 
-// Login Controller - Now checks for verification
+// Login Controller
 const loginController = async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const user = await userModel.findOne({ email });
+        const { contact, password } = req.body;
+
+        //  Find user by Email OR Phone
+        const user = await userModel.findOne({
+            $or: [{ email: contact }, { phone: contact }]
+        });
 
         if (!user) {
-            return res.status(404).send({ success: false, message: 'Email not found!' });
-            
+            return res.status(404).send({ 
+                success: false, 
+                message: 'Account not found!' 
+            });
         }
         
-        // Check if user is verified
+        //  Check if user is verified
         if (!user.isVerified) {
-            return res.status(401).send({ success: false, message: 'Please Verify your Email by Reseting the Password' });
+            return res.status(401).send({ 
+                success: false, 
+                message: 'Account not verified. Please verify your account to login.' 
+            });
         }
 
+        //  Compare Password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).send({ success: false, message: 'Incorrect password!' });
+            return res.status(400).send({ 
+                success: false, 
+                message: 'Incorrect password!' 
+            });
         }
 
+        //  Generate Token
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
             expiresIn: '1d',
         });
 
+        // Send Response
         res.status(200).send({
             success: true,
             message: 'Login successful!',
             token,
-            user: { id: user._id,
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                    isAdmin: user.isAdmin,
-                    phone:user.phone,
-                    address: user.address,
-                    dob: user.dob,
-                    gender: user.gender,
-                    bloodGroup: user.bloodGroup,
-                    profilePicture:user.profilePicture,
-                    patientId: user.patientId,
-                    doctorId: user.doctorId,
-                    bio: user.bio,
-                    available: user.available,
-                    availableDays: user.availableDays,
-                    timings: user.timings
-                 },
+            user: { 
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                isAdmin: user.isAdmin,
+                address: user.address,
+                dob: user.dob,
+                gender: user.gender,
+                bloodGroup: user.bloodGroup,
+                profilePicture: user.profilePicture,
+                patientId: user.patientId,
+                doctorId: user.doctorId,
+                bio: user.bio,
+                available: user.available,
+                availableDays: user.availableDays,
+                timings: user.timings,
+                specialty: user.specialty,
+                notification: user.notification,
+                seennotification: user.seennotification
+            },
         });
 
     } catch (error) {
@@ -167,66 +226,103 @@ const loginController = async (req, res) => {
     }
 };
 
-// --- PASSWORD RESET CONTROLLERS ---
-
-// Forgot Password Controller
+// Forgot Password  
 const forgotPasswordController = async (req, res) => {
     try {
-        const { email } = req.body;
-        const user = await userModel.findOne({ email });
+        const { contact } = req.body;
+
+        // Find user by Email OR Phone
+        const user = await userModel.findOne({
+            $or: [{ email: contact }, { phone: contact }]
+        });
+
         if (!user) {
-            return res.status(404).send({ success: false, message: 'Account with this email does not exist.' });
+            return res.status(404).send({ 
+                success: false, 
+                message: 'Account with this contact detail does not exist.' 
+            });
         }
 
-        // Generate and save OTP
+        // Generate and save OTP 
         const otp = user.createOtp();
         await user.save({ validateBeforeSave: false });
-        console.log(otp);
 
-        // Send OTP to user's email
-        const message = `<p>Hi ${user.name},</p>
-                         <p>You requested a password reset. Your One-Time Password (OTP) is:</p>
-                         <h2><strong>${otp}</strong></h2>`;
+        //  Determine if contact is email or phone for delivery
+        const isEmail = contact.includes('@');
 
-        await sendEmail({
-            email: user.email,
-            subject: 'Your HealthBridge Password Reset OTP',
-            html: message,
-        });
+        if (isEmail) {
+            // Send OTP via Email
+            const emailHtml = `
+                <div style="font-family: Arial, sans-serif; padding: 20px;">
+                    <h2>Password Reset Request</h2>
+                    <p>Hi ${user.name},</p>
+                    <p>Your One-Time Password (OTP) for password reset is:</p>
+                    <h1 style="letter-spacing: 5px;">${otp}</h1>
+                    <p>This code is valid for 10 minutes.</p>
+                </div>
+            `;
+
+            await sendEmail({
+                email: user.email,
+                subject: 'HealthBridge Password Reset OTP',
+                html: emailHtml,
+            });
+        } else {
+            // Send OTP via Twilio
+            try {
+                await client.messages.create({
+                    body: `Your HealthBridge password reset code is: ${otp}. Valid for 10 minutes.`,
+                    from: process.env.TWILIO_PHONE_NUMBER,
+                    to: `+91${user.phone}`
+                });
+            } catch (twilioError) {
+                console.warn(`TWILIO FORGOT-PASSWORD FAIL: +91${user.phone}`);
+                console.warn(`FOR DEMO, USE THIS RESET OTP: ${otp}`);
+            }
+        }
 
         res.status(200).send({
             success: true,
-            message: 'If an account with this email exists, a password reset OTP has been sent.',
+            message: `A password reset OTP has been sent to your registered ${isEmail ? 'email' : 'phone number'}.`,
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).send({ success: false, message: 'Error sending password reset OTP.' });
+        console.error("Forgot Password Error:", error);
+        res.status(500).send({ 
+            success: false, 
+            message: 'Error sending password reset OTP.' 
+        });
     }
 };
 
 // Reset Password Controller
 const resetPasswordWithOtpController = async (req, res) => {
     try {
-        const { email, otp, password } = req.body;
 
-        // 1) Find user by email, OTP, and check if OTP is still valid
+        const { contact, otp, password } = req.body;
+
         const user = await userModel.findOne({
-            email,
+            $or: [{ email: contact }, { phone: contact }],
             otp,
             otpExpires: { $gt: Date.now() },
         });
 
-        // 2) If no user is found, the OTP is invalid or expired
         if (!user) {
-            return res.status(400).send({ success: false, message: 'OTP is invalid or has expired.' });
+            return res.status(400).send({ 
+                success: false, 
+                message: 'OTP is invalid or has expired.' 
+            });
         }
 
-        // 3) If OTP is valid, set the new password
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(password, salt);
+        
+        user.isVerified = true; 
+        
+        // Clear OTP fields
         user.otp = undefined;
         user.otpExpires = undefined;
+        
         await user.save();
 
         res.status(200).send({
@@ -235,14 +331,15 @@ const resetPasswordWithOtpController = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).send({ success: false, message: 'Error resetting password.' });
+        console.error("Reset Password Error:", error);
+        res.status(500).send({ 
+            success: false, 
+            message: 'Error resetting password.' 
+        });
     }
 };
 
-// Add these functions to your existing userCtrl.js file
-
-// Get All Doctors Controller
+// Get All Doctors
 const getAllDoctorsController = async (req, res) => {
     try {
         // Find all users with the role 'doctor'
@@ -262,7 +359,7 @@ const getAllDoctorsController = async (req, res) => {
     }
 };
 
-// Get Single Doctor by ID Controller
+// Get Single Doctor by ID 
 const getDoctorByIdController = async (req, res) => {
     try {
         const doctor = await userModel.findById(req.params.doctorId).select('-password');
@@ -286,10 +383,9 @@ const getDoctorByIdController = async (req, res) => {
         });
     }
 };
-// --- NEW: Get User Profile Controller ---
+// Get User Profile
 const getUserProfileController = async (req, res) => {
     try {
-        // req.user is attached by our 'protect' middleware
         const user = await userModel.findById(req.user._id).select('-password');
         if (!user) {
             return res.status(404).send({ success: false, message: 'User not found' });
@@ -301,10 +397,9 @@ const getUserProfileController = async (req, res) => {
     }
 };
 
-// --- NEW: Update User Profile Controller ---
+// Update User Profile Controller
 const updateUserProfileController = async (req, res) => {
     try {
-        // Get all fields from the form data
         const { name, email, phone, address, dob, gender, bloodGroup } = req.body;
         const user = await userModel.findById(req.user._id);
 
@@ -321,7 +416,6 @@ const updateUserProfileController = async (req, res) => {
         user.gender = gender || user.gender;
         user.bloodGroup = bloodGroup || user.bloodGroup;
 
-        // If a new photo was uploaded, update the profilePicture with the Cloudinary URL
         if (req.file) {
             user.profilePicture = req.file.path; 
         }
@@ -339,9 +433,6 @@ const updateUserProfileController = async (req, res) => {
         res.status(500).send({ success: false, message: 'Error updating profile' });
     }
 };
-// In appointy-backend/controllers/userCtrl.js
-
-// In appointy-backend/controllers/userCtrl.js
 
 const doctorSlotsController = async (req, res) => {
     try {
@@ -356,7 +447,7 @@ const doctorSlotsController = async (req, res) => {
         const appointments = await appointmentModel.find({
             doctorId,
             date,
-            status: { $ne: 'cancelled' } // <-- This is the crucial fix
+            status: { $ne: 'cancelled' }
         });
 
         const bookedSlots = appointments.map(appt => appt.time);
@@ -381,48 +472,59 @@ const doctorSlotsController = async (req, res) => {
 
 const resendOtpController = async (req, res) => {
     try {
-        const { email } = req.body;
-        const user = await userModel.findOne({ email });
+        const { contact } = req.body;
+
+        // Find user by Email OR Phone
+        const user = await userModel.findOne({
+            $or: [{ email: contact }, { phone: contact }]
+        });
 
         if (!user) {
-            // To prevent attackers from checking which emails are registered,
-            // we send a generic success message even if the user is not found.
-            return res.status(200).send({
-                success: true,
-                message: 'If an account with this email exists, a new OTP has been sent.'
+            return res.status(404).send({
+                success: false,
+                message: 'Account not found!'
             });
         }
 
-        // Generate a new OTP and save it to the user's document
+        // Generate new OTP and update expiry
         const otp = user.createOtp();
         await user.save({ validateBeforeSave: false });
 
-        // Send the new OTP to the user's email
-        const message = `<p>Hi ${user.name},</p><p>Your new One-Time Password (OTP) is: <strong>${otp}</strong></p>`;
-
-        await sendEmail({
-            email: user.email,
-            subject: 'Your New HealthBridge Verification OTP',
-            html: message,
-        });
+        // Delivery Logic
+        const isEmail = contact.includes('@');
+        if (isEmail) {
+            await sendEmail({
+                email: user.email,
+                subject: 'HealthBridge Resend OTP',
+                html: `<h1>Your new OTP is: ${otp}</h1>`
+            });
+        } else {
+            try {
+                await client.messages.create({
+                    body: `Your new HealthBridge OTP is: ${otp}`,
+                    from: process.env.TWILIO_PHONE_NUMBER,
+                    to: `+91${user.phone}`
+                });
+            } catch (twilioErr) {
+                console.warn(`Resend OTP Fallback: ${otp}`);
+            }
+        }
 
         res.status(200).send({
             success: true,
-            message: 'A new OTP has been sent to your email.',
+            message: 'OTP has been resent successfully!'
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Resend OTP Error:", error);
         res.status(500).send({
             success: false,
-            message: 'Error resending OTP',
+            message: 'Internal Server Error while resending OTP'
         });
     }
 };
 
-// --- NEW: Get Full Doctor Details for Booking Page ---
-// In appointy-backend/controllers/userCtrl.js
-
+// Get Full Doctor Details for Booking Page
 const getDoctorDetailsForBooking = async (req, res) => {
     try {
         const doctor = await userModel.findById(req.params.doctorId);
@@ -433,7 +535,7 @@ const getDoctorDetailsForBooking = async (req, res) => {
         // Find appointments that are NOT cancelled
         const appointments = await appointmentModel.find({
             doctorId: req.params.doctorId,
-            status: { $ne: 'cancelled' } // <-- This is the crucial fix
+            status: { $ne: 'cancelled' }
         });
 
         const bookedSlots = appointments.map(appt => ({
@@ -459,6 +561,36 @@ const getDoctorDetailsForBooking = async (req, res) => {
     }
 };
 
+const deleteAllNotificationController = async (req, res) => {
+  try {
+    const user = await userModel.findOne({ _id: req.body.userId });
+    
+    const notifications = user.notification;
+    const seenNotifications = user.seennotification;
+    seenNotifications.push(...notifications);
+
+    user.notification = [];
+    user.seennotification = seenNotifications;
+
+    const updatedUser = await user.save();
+    
+    updatedUser.password = undefined;
+
+    res.status(200).send({
+      success: true,
+      message: "All notifications marked as read",
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error in marking all as read",
+      error,
+    });
+  }
+};
+
 module.exports = { 
     registerController, 
     verifyOtpController,
@@ -472,4 +604,5 @@ module.exports = {
     doctorSlotsController,
     resendOtpController,
     getDoctorDetailsForBooking,
+    deleteAllNotificationController
 };

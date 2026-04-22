@@ -57,7 +57,6 @@ const AddDoctorPage = () => {
     const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-        // Corrected: Changed 'profilePhoto' to 'profilePicture' to match the backend
         setFormData(prev => ({ ...prev, profilePicture: file }));
     }
 };
@@ -108,7 +107,7 @@ const AddDoctorPage = () => {
     };
 
     const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const specialties = ["General Physician", "Cardiologist", "Dermatologist", "Pediatrician", "Neurologist", "Orthopedist", "Gynecologist", "Gastroenterologist", "Urologist", "Otolaryngologist (ENT)", "Endocrinologist", "Pulmonologist"];
+    const specialties = ["General Physician", "Cardiologist", "Dermatologist", "Pediatrician", "Neurologist", "Orthopedist", "Gynecologist", "Gastroenterologist", "Urologist", "Otolaryngologist (ENT)", "Endocrinologist", "Pulmonologist", "Other"];
     const qualifications = ["MBBS", "MD", "MS", "DM", "MCh", "DNB", "PHD"];
 
     return (

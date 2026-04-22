@@ -13,7 +13,6 @@ const DoctorManagementPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState({ specialty: '' });
     const [sortConfig, setSortConfig] = useState({ key: 'joinDate', direction: 'descending' });
-    const [activeActionMenu, setActiveActionMenu] = useState(null);
 
     const fetchDoctors = async () => {
         try {
@@ -35,24 +34,6 @@ const DoctorManagementPage = () => {
             fetchDoctors();
         }
     }, [token]);
-
-    // const handleDoctorStatus = async (doctorId, status) => {
-    //     try {
-    //         const res = await axios.post('http://localhost:8080/api/v1/admin/changeAccountStatus', 
-    //             { doctorId, status },
-    //             { headers: { Authorization: `Bearer ${token}` } }
-    //         );
-    //         if (res.data.success) {
-    //             message.success(res.data.message);
-    //             setActiveActionMenu(null); // Close the menu
-    //             fetchDoctors(); // Refresh the list
-    //         } else {
-    //             message.error(res.data.message);
-    //         }
-    //     } catch (error) {
-    //         message.error('Something went wrong');
-    //     }
-    // };
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -105,7 +86,7 @@ const DoctorManagementPage = () => {
             <main className="flex-1 p-6">
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                        {/* <div className="relative">
+                        <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"/>
                             <input 
                                 type="text"
@@ -114,7 +95,7 @@ const DoctorManagementPage = () => {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                        </div> */}
+                        </div>
                         <select name="specialty" value={filters.specialty} onChange={handleFilterChange} className="w-full px-3 py-2 border border-slate-300 rounded-md">
                             <option value="">All Specialities</option>
                             {specialties.map(spec => <option key={spec} value={spec}>{spec}</option>)}
@@ -152,21 +133,6 @@ const DoctorManagementPage = () => {
                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${doc.available ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-800'}`}>
                                                 {doc.available ? 'Available' : 'Unavailable'}
                                             </span>
-                                        </td>
-                                        <td className="p-3 text-center">
-                                            {/* <div className="relative">
-                                                <button onClick={() => setActiveActionMenu(activeActionMenu === doc._id ? null : doc._id)} className="p-2 rounded-full hover:bg-slate-200">
-                                                    <MoreVertical className="w-5 h-5"/>
-                                                </button>
-                                                {activeActionMenu === doc._id && (
-                                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border">
-                                                        <Link to={`/admin/doctor/${doc._id}`} className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"><Eye className="w-4 h-4 mr-2"/> View Profile</Link>
-                                                        <Link to={`/admin/doctor/edit/${doc._id}`} className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"><Edit className="w-4 h-4 mr-2"/> Edit Details</Link>
-                                                        <button onClick={() => handleDoctorStatus(doc._id, doc.available ? 'unavailable' : 'available')} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">{doc.available ? <PowerOff className="w-4 h-4 mr-2"/> : <Power className="w-4 h-4 mr-2"/>} Set {doc.available ? 'Unavailable' : 'Available'}</button>
-                                                        <button className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4 mr-2"/> Delete</button>
-                                                    </div>
-                                                )}
-                                            </div> */}
                                         </td>
                                     </tr>
                                 ))}

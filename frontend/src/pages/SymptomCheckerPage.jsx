@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Stethoscope } from 'lucide-react';
+import { Stethoscope, Mic, MicOff } from 'lucide-react';
 import axios from 'axios';
 import { message } from 'antd';
+import toast from 'react-hot-toast';
 
 const SymptomCheckerPage = () => {
     const [symptoms, setSymptoms] = useState('');
@@ -10,51 +11,94 @@ const SymptomCheckerPage = () => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    // VOICE RECOGNITION STATE
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef(null);
+
+    // Initialize Speech Recognition on component mount
+    useEffect(() => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[event.results.length - 1][0].transcript;
+                setSymptoms((prev) => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + transcript);
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech Recognition Error:", event.error);
+                setIsListening(false);
+                if (event.error === 'not-allowed') {
+                    message.error("Microphone access denied. Please check your browser permissions.");
+                    toast.error("Microphone access denied. Please check your browser permissions.");
+                }
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognitionRef.current = recognition;
+        }
+    }, []);
+
+    // Toggle Voice Listening
+    const toggleListening = () => {
+        if (!recognitionRef.current) {
+            message.warning("Voice recognition is not supported in this browser.");
+            toast.warning("Voice recognition is not supported in this browser.");
+            return;
+        }
+
+        if (isListening) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        } else {
+            try {
+                recognitionRef.current.start();
+                setIsListening(true);
+            } catch (err) {
+                console.error("Could not start speech recognition:", err);
+            }
+        }
+    };
+
     const handleSymptomCheck = async () => {
         if (!symptoms.trim()) {
             message.warning('Please enter your symptoms.');
             return;
         }
 
+        if (isListening && recognitionRef.current) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        }
+
         setLoading(true);
         setError('');
 
-        const apiKey = "AIzaSyBIHpNFALgMd9q9GLOGfXGwPJ4eVP7QGX0";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-        
-        const prompt = `
-            Based on the following symptoms, suggest the single most relevant medical specialty from this list: 
-            Cardiologist, Dermatologist, Pediatrician, Neurologist, Orthopedist, Gynecologist, Gastroenterologist, Urologist, Otolaryngologist (ENT), Endocrinologist, Pulmonologist, General Physician.
-            Respond with only the name of the specialty. For example: 'Cardiologist'. 
-            Do not add any other text, explanation, or punctuation. This is a suggestion, not a diagnosis.
-            Symptoms: "${symptoms}"
-        `;
-
-        const payload = {
-            contents: [{ parts: [{ text: prompt }] }]
-        };
-
         try {
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            if (!response.ok) throw new Error(`API request failed`);
+            const backendUrl = `http://localhost:8080/api/v1/doctor/ai-search`;
 
-            const apiResponse = await response.json();
-            
-            if (apiResponse.candidates && apiResponse.candidates.length > 0) {
-                const specialty = apiResponse.candidates[0].content.parts[0].text.trim().replace('.', '');
-                navigate(`/alldoctors?specialty=${(specialty)}`);
+            const { data } = await axios.post(backendUrl, {
+                prompt: symptoms // Send the symptoms to your backend
+            });
+
+            if (data.success) {
+                const specialty = data.data.trim().replace(/\./g, '');
+                message.success(`Suggested Specialist: ${specialty}`);
+                navigate(`/alldoctors?specialty=${encodeURIComponent(specialty)}`);
             } else {
-                throw new Error('Unexpected API response format');
+                throw new Error(data.message || 'AI could not determine a specialty.');
             }
 
         } catch (err) {
-            console.error('Error calling Gemini API:', err);
-            setError('Sorry, we couldn\'t process your request. Please try again.');
+            console.error('SEARCH ERROR:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to connect to AI server.');
+            toast.error("Could not suggest a specialist. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -85,6 +129,23 @@ const SymptomCheckerPage = () => {
                         <p className="mt-4 text-slate-600">Not sure which doctor to see? Describe your symptoms below, and our AI will suggest a specialist.</p>
                     </div>
                     <div className="space-y-4">
+
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="font-bold text-slate-700">Describe your symptoms</label>
+                            <button 
+                                type="button"
+                                onClick={toggleListening}
+                                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-bold rounded-full transition-all ${
+                                    isListening 
+                                    ? 'bg-red-100 text-red-600 shadow-inner' 
+                                    : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
+                                }`}
+                            >
+                                {isListening ? <MicOff size={16} className="animate-pulse" /> : <Mic size={16} />}
+                                {isListening ? 'Listening...' : 'Dictate Symptoms'}
+                            </button>
+                        </div>
+
                         <textarea 
                             rows="4" 
                             className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 transition" 
@@ -99,12 +160,12 @@ const SymptomCheckerPage = () => {
                             disabled={loading}
                         >
                             {loading ? (
-                                <div className="loader w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
                                 <span>Find a Specialist</span>
                             )}
                         </button>
-                        {error && <p className="text-center text-red-600">{error}</p>}
+                        {error && <p className="text-center text-red-600 text-sm px-4">{error}</p>}
                         <p className="mt-4 text-xs text-slate-500 text-center">Disclaimer: This is an AI-powered suggestion and not a medical diagnosis. Please consult a qualified healthcare professional.</p>
                     </div>
                 </div>
@@ -114,3 +175,5 @@ const SymptomCheckerPage = () => {
 };
 
 export default SymptomCheckerPage;
+
+

@@ -11,13 +11,13 @@ const AdminLogin = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(false);
-    const [email, setEmail] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
     const onFinish = async (e) => {
         e.preventDefault();
-        const values = { email, password };
+        const values = { contact: identifier, password };
 
         try {
             setLoading(true);
@@ -26,7 +26,7 @@ const AdminLogin = () => {
             if (res.data.success) {
                 message.success(res.data.message);
                 dispatch(setUser({ user: res.data.user, token: res.data.token }));
-                // Check the role
+                // Checking the role
                 if (res.data.user.isAdmin && res.data.user.role === "admin") {
                     toast.success("Login succesfully")
                     navigate('/admin');
@@ -65,20 +65,20 @@ const AdminLogin = () => {
                 {/* Form */}
                 <form className="space-y-6" onSubmit={onFinish}>
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+                        <label htmlFor="identifier" className="block text-sm font-medium text-slate-700">
                             Email address
                         </label>
                         <div className="mt-1">
                             <input
-                                id="email"
-                                name="email"
-                                type="email"
+                                id="identifier"
+                                name="identifier"
+                                type="text"
                                 autoComplete="email"
                                 required
                                 className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
                                 placeholder="Enter Your Email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
                             />
                         </div>
                     </div>

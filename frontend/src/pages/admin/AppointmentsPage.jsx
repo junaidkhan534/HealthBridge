@@ -90,7 +90,7 @@ const AppointmentsPage = () => {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"/>
                             <input 
                                 type="text"
-                                placeholder="Search..."
+                                placeholder="Search by Name..."
                                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -103,7 +103,7 @@ const AppointmentsPage = () => {
                             <option value="completed">Completed</option>
                             <option value="cancelled">Cancelled</option>
                         </select>
-                        {/* <input type="date" name="date" value={filters.date} onChange={handleFilterChange} className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"/> */}
+                        <input type="date" name="date" value={filters.date} onChange={handleFilterChange} className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"/>
                     </div>
 
                     {/* Appointments Table */}
@@ -114,7 +114,7 @@ const AppointmentsPage = () => {
                                     <th className="p-3">Patient Name</th>
                                     <th className="p-3">Doctor Name</th>
                                     <th className="p-3">Date & Time</th>
-                                    {/* <th className="p-3">Fees</th> */}
+                                    <th className="p-3">Fees</th>
                                     <th className="p-3">Status</th>
                                 </tr>
                             </thead>
@@ -131,9 +131,9 @@ const AppointmentsPage = () => {
                                             </div>
                                         </td>
                                         <td className="p-3 text-sm text-slate-600">{appt.date} at {appt.time}</td>
-                                        {/* <td className="p-3 font-semibold text-slate-700">
+                                        <td className="p-3 font-semibold text-slate-700">
                                             ₹{appt.fees}
-                                        </td> */}
+                                        </td>
                                         <td className="p-3">
                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full capitalize ${getStatusBadge(appt.status)}`}>
                                                 {appt.status}

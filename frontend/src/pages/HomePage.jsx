@@ -50,18 +50,18 @@ const HomePage = () => {
                 </nav>
                 {/* Mobile Menu */}
                 <div className={`md:hidden bg-white ${isMobileMenuOpen ? 'block' : 'hidden'}`}>
-                    <a href="/" className="block py-2 px-4 text-sm hover:bg-teal-50">Home</a>
+                    <Link to="/" className="block py-2 px-4 text-sm hover:bg-teal-50">Home</Link>
                     <a href="#specialities" className="block py-2 px-4 text-sm hover:bg-teal-50">Specialities</a>
-                    <a href="/alldoctors" className="block py-2 px-4 text-sm hover:bg-teal-50">All Doctors</a>
-                    <a href="/finddoctor" className="block py-2 px-4 text-sm hover:bg-teal-50">Find a Doctor</a>
-                    <a href="/about" className="block py-2 px-4 text-sm hover:bg-teal-50">About</a>
+                    <Link to="/alldoctors" className="block py-2 px-4 text-sm hover:bg-teal-50">All Doctors</Link>
+                    <Link to="/finddoctor" className="block py-2 px-4 text-sm hover:bg-teal-50">Find a Doctor</Link>
+                    <Link to="/about" className="block py-2 px-4 text-sm hover:bg-teal-50">About</Link>
                     <Link to="/login" className="block py-2 px-4 text-sm hover:bg-teal-50">Patient Login</Link>
                     <Link to="/portal/login" className="block py-2 px-4 text-sm hover:bg-teal-50">Admin/Doctor Login</Link>
                 </div>
             </header>
 
             {/* photo Section */}
-            <main id="home" className="bg-right bg-no-repeat bg-cover text-white" style={{backgroundImage: "linear-gradient(to right, rgba(0, 105, 105, 1), rgba(0, 40, 40, 0.8)), url('/main.jpg')"}}>
+            <main id="home" className="bg-right bg-no-repeat bg-cover text-white" style={{backgroundImage: "linear-gradient(to right, rgba(5, 52, 52, 1), rgba(5, 40, 40, 1)), url('/main.jpg')"}}>
             <div className="container mx-auto px-6 py-24 md:py-40 text-left">
                 <div className="max-w-3xl mx-auto transform -translate-x-15">
                     <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight">
@@ -194,7 +194,7 @@ const HomePage = () => {
                             <h3 className="font-semibold text-white">Explore</h3>
                             <ul className="mt-4 space-y-2">
                                 <li><a href="/about" className="text-slate-400 hover:text-white">About Us</a></li>
-                                <li><a href="#specialities" className="text-slate-400 hover:text-white">Specialitiea</a></li>
+                                <li><a href="#specialities" className="text-slate-400 hover:text-white">Specialities</a></li>
                                 <li><a href="/alldoctors" className="text-slate-400 hover:text-white">Our Doctors</a></li>
                             </ul>
                         </div>
@@ -209,7 +209,7 @@ const HomePage = () => {
                 </div>
                 <div className="bg-slate-900 py-2">
                     <div className="container mx-auto p-2 text-center text-slate-500">
-                        <p>&copy; 2025 HealthBridge. All rights reserved.</p>
+                        <p>&copy; 2025-26 HealthBridge. All rights reserved.</p>
                     </div>
                 </div>
             </footer>

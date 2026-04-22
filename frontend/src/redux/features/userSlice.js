@@ -1,10 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// This function attempts to get the user from localStorage
+// This function attempts to get the user from localStorage safely
 const getUserFromLocalStorage = () => {
     try {
         const serializedUser = localStorage.getItem('user');
-        if (serializedUser === null) {
+        if (serializedUser === null || serializedUser === "undefined") {
             return null;
         }
         return JSON.parse(serializedUser);
@@ -15,8 +15,8 @@ const getUserFromLocalStorage = () => {
 };
 
 const initialState = {
-    user: getUserFromLocalStorage(), // Load user on initial start
-    token: localStorage.getItem('token') || null, // Load token on initial start
+    user: getUserFromLocalStorage(), 
+    token: localStorage.getItem('token') || null, 
 };
 
 export const userSlice = createSlice({
@@ -24,16 +24,23 @@ export const userSlice = createSlice({
     initialState,
     reducers: {
         setUser: (state, action) => {
-            state.user = action.payload.user;
-            state.token = action.payload.token;
-            // Save to local storage so it persists on refresh
-            localStorage.setItem('user', JSON.stringify(action.payload.user));
-            localStorage.setItem('token', action.payload.token);
+            const newUser = action.payload.user || action.payload; 
+            const newToken = action.payload.token || state.token;
+
+
+            state.user = { ...state.user, ...newUser };
+            state.token = newToken;
+
+            if (state.user) {
+                localStorage.setItem('user', JSON.stringify(state.user));
+            }
+            if (state.token) {
+                localStorage.setItem('token', state.token);
+            }
         },
         logout: (state) => {
             state.user = null;
             state.token = null;
-            // Clear from local storage on logout
             localStorage.removeItem('user');
             localStorage.removeItem('token');
         },

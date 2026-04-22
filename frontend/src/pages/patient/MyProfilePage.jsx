@@ -75,7 +75,7 @@ const MyProfilePage = () => {
         return false;
     }
 
-    // Phone validation (10-15 digits)
+    // Phone validation
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(profileData.phone)) {
         toast.error("Please enter a valid phone number");
@@ -88,7 +88,7 @@ const MyProfilePage = () => {
     const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateInputs()) return; // Stop submission if invalid
+    if (!validateInputs()) return; 
 
     setLoading(true);
     const formData = new FormData();

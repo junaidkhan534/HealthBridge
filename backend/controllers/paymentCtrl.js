@@ -1,9 +1,6 @@
-// appointy-backend/controllers/paymentCtrl.js
-
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 
-// This now relies ONLY on your .env file.
 const instance = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -11,7 +8,6 @@ const instance = new Razorpay({
 
 const createOrderController = async (req, res) => {
     try {
-        // Check if keys are loaded
         if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
             throw new Error("Razorpay keys are not configured in the .env file.");
         }

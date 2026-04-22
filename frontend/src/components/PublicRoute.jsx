@@ -11,7 +11,6 @@ const PublicRoute = ({ children }) => {
   // If user has a token, redirect to dashboard (meaning logged in)
   if (token && token !== "undefined" && token !== "") {
     if (role === "patient") return <Navigate to="/patient" replace />;
-    // return <Navigate to="/patient" replace />;
   }
 
   

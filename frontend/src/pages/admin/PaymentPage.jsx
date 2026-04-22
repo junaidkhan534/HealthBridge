@@ -4,8 +4,6 @@ import { Stethoscope, Search, DollarSign, CreditCard, Landmark, Calendar, ArrowL
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { message } from 'antd';
-import { logout } from '../../redux/features/userSlice';
-import toast from 'react-hot-toast';
 
 const PaymentPage = () => {
     const { user, token } = useSelector(state => state.user);

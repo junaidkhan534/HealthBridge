@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const userModel = require('../models/userModel');
 
-// Middleware to protect routes that require authentication
 const protect = async (req, res, next) => {
     let token;
     // Check for token in the authorization header
@@ -13,15 +12,14 @@ const protect = async (req, res, next) => {
             // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Get user from the token (and attach to request object)
-            // Exclude password from the user object
+            // Get user from the token 
             req.user = await userModel.findById(decoded.id).select('-password');
             
             if (!req.user) {
                  return res.status(401).send({ success: false, message: 'Not authorized, user not found' });
             }
 
-            next(); // Proceed to the next middleware/controller
+            next(); 
         } catch (error) {
             console.error(error);
             res.status(401).send({ success: false, message: 'Not authorized, token failed' });

@@ -19,7 +19,6 @@ const Layout = ({ children }) => {
         navigate('/');
     };
 
-    // --- Menus Definition ---
     const patientMenu = [
         { name: 'Home', path: '/' },
         { name: 'My Appointments', path: '/appointments' },
@@ -27,7 +26,7 @@ const Layout = ({ children }) => {
 
     const doctorMenu = [
         { name: 'Dashboard', path: '/doctor/appointments' },
-        { name: 'Profile', path: '/doctor/profile' }, // We can build this page later
+        { name: 'Profile', path: '/doctor/profile' }, 
     ];
 
     const adminMenu = [
@@ -35,20 +34,20 @@ const Layout = ({ children }) => {
         { name: 'Patients', path: '/admin/users' },
     ];
 
-    // Determine which menu to render based on user role
+
     const baseMenu = user?.isAdmin
         ? adminMenu
         : user?.role === 'doctor'
         ? doctorMenu
         : patientMenu;
 
-    // --- Transform menus for the `items` prop ---
+
     const menuItems = baseMenu.map(item => ({
         key: item.path,
         label: <Link to={item.path}>{item.name}</Link>
     }));
 
-    // Add conditional items (Login/Logout)
+
     const finalMenuItems = user
         ? [
               ...menuItems,
@@ -74,7 +73,7 @@ const Layout = ({ children }) => {
                     theme="dark"
                     mode="horizontal"
                     selectedKeys={[location.pathname]}
-                    items={finalMenuItems} // Use the new `items` prop here
+                    items={finalMenuItems} 
                     style={{ flex: 1, minWidth: 0, justifyContent: 'flex-end' }}
                 />
             </Header>

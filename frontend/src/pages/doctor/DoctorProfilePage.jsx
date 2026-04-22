@@ -55,7 +55,7 @@ const DoctorProfilePage = () => {
         return;
     }
 
-    // Phone validation (10 digits)
+    // Phone validation 
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(profileData.phone)) {
         toast.error("Please enter a valid 10-digit phone number.");

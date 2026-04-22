@@ -12,66 +12,63 @@ const {
     updateUserProfileController,
     doctorSlotsController,
     resendOtpController,
-    getDoctorDetailsForBooking
+    getDoctorDetailsForBooking,
+    deleteAllNotificationController
 } = require('../controllers/userCtrl');
 const { protect } = require('../middleware/authMiddleware');
 
-// Router object
 const router = express.Router();
 
-// --- AUTHENTICATION ROUTES ---
-// POST || Register a new user (sends OTP)
+// Register a new user
 router.post('/register', registerController);
 
-// POST || Verify OTP and log in user
+// Verify OTP and log in user
 router.post('/verify-otp', verifyOtpController);
 
-// POST || Login user
+// Login user
 router.post('/login', loginController);
 
-// POST || Forgot Password
+// Forgot Password
 router.post('/forgot-password', forgotPasswordController);
 
-// PATCH || Reset Password
+// Reset Password
 router.post('/reset-password-otp', resetPasswordWithOtpController);
 
-// --- DOCTOR LISTING ROUTES (Public) ---
-// GET || Get all doctors
+// Get all doctors
 router.get('/getAllDoctors', getAllDoctorsController);
 
-// GET || Get single doctor by ID
+// Get single doctor by ID
 router.get('/getDoctorById/:doctorId', getDoctorByIdController);
 
+// Update Profile
 router.put('/profile', protect, upload.single('profilePicture'), updateUserProfileController);
 
-
-
-// --- PROTECTED TEST ROUTE ---
-// GET || Get User Profile
-// We'll create the controller for this later, but we can protect the route now
+// Get User Profile
 router.get('/profile', protect, (req, res) => {
     res.status(200).send({
         success: true,
         message: 'Profile data',
-        data: req.user // req.user is attached by the 'protect' middleware
+        data: req.user 
     });
 });
 
-// GET || Get user profile data
+// Get user profile data
 router.get('/profile', protect, getUserProfileController);
 
-// PUT || Update user profile data
+// Update user profile data
 router.put('/profile', protect, updateUserProfileController);
 
-// --- NEW: Get Doctor Slots Route (Protected) ---
+// Get Doctor Slots 
 router.post('/doctor-slots', protect, doctorSlotsController);
 
-// --- NEW: Resend OTP Route ---
+// Resend OTP Route 
 router.post('/resend-otp', resendOtpController);
 
-// --- NEW: Get Full Doctor Details Route (Can be public) ---
+// Get Full Doctor Details
 router.get('/doctor-details/:doctorId', getDoctorDetailsForBooking);
 
+// For Notification
+router.post("/get-all-notification", protect, deleteAllNotificationController);
 
 
 module.exports = router;

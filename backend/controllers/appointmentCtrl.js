@@ -1,13 +1,12 @@
 const appointmentModel = require('../models/appointmentModel');
 const userModel = require('../models/userModel');
 
-// Book Appointment Controller;
+// For Book Appointment
 const bookAppointmentController = async (req, res) => {
     try {
         const { doctorId, date, time, payment } = req.body; 
-        const userId = req.user._id; // from 'protect' middleware
+        const userId = req.user._id;
 
-        // Fetch doctor and user info
         const doctor = await userModel.findById(doctorId);
         const user = await userModel.findById(userId);
 
@@ -15,7 +14,7 @@ const bookAppointmentController = async (req, res) => {
             return res.status(404).send({ success: false, message: 'Doctor or User not found' });
         }
 
-        // --- Availability Check ---
+        // Availability Check
         const existingAppointment = await appointmentModel.findOne({
             doctorId,
             date,
@@ -39,13 +38,13 @@ const bookAppointmentController = async (req, res) => {
             date,
             time,
             payment,
-            status: "pending", // 👈 better to keep default as pending
+            status: "pending", 
             fees: doctor.fees
         });
 
         await newAppointment.save();
 
-        // --- START: Notification Logic ---
+        // Notification
         const adminUsers = await userModel.find({ role: 'admin' });
 
         const notification = {
@@ -58,7 +57,17 @@ const bookAppointmentController = async (req, res) => {
             admin.notification.push(notification);
             await admin.save();
         }
-        // --- END: Notification Logic ---
+
+        // REAL-TIME SOCKET.IO
+        const io = req.app.get('socketio'); 
+
+        console.log("Socket IO instance found:", !!io);
+        console.log("Trying to send to Doctor Room:", doctorId.toString());
+
+        if (io) {
+            io.to(doctorId.toString()).emit('newAppointmentRequest', newAppointment);
+            console.log("Live event fired successfully!");
+        }
 
         res.status(201).send({
             success: true,
@@ -73,63 +82,7 @@ const bookAppointmentController = async (req, res) => {
     }
 };
 
-// const bookAppointmentController = async (req, res) => {
-//     try {
-//         const { doctorId, date, time, payment } = req.body; 
-//         const userId = req.user._id; // from 'protect' middleware
-
-//         // Fetch doctor and user info for easy display
-//         const doctor = await userModel.findById(doctorId);
-//         const user = await userModel.findById(userId);
-
-//         if (!doctor || !user) {
-//             return res.status(404).send({ success: false, message: 'Doctor or User not found' });
-//         }
-
-//         const newAppointment = new appointmentModel({
-//             userId,
-//             doctorId,
-//             doctorInfo: doctor.name,
-//             userInfo: user.name,
-//             date,
-//             time,
-//             payment
-//         });
-
-//         await newAppointment.save();
-
-//          // --- START: Notification Logic ---
-//         // Find all admin users to send them a notification
-//         const adminUsers = await userModel.find({ role: 'admin' });
-
-//         // Create the notification object
-//         const notification = {
-//             type: 'new-appointment-request',
-//             message: `A new appointment has been booked by ${user.name} with Dr. ${doctor.name}`,
-//             onClickPath: '/admin/appointments' // The page to navigate to when clicked
-//         };
-
-//         // Push the notification to each admin's notification array
-//         for (const admin of adminUsers) {
-//             admin.notification.push(notification);
-//             await admin.save(); // Save each admin document with the new notification
-//         }
-//         // --- END: Notification Logic ---
-
-//         res.status(201).send({
-//             success: true,
-//             message: 'Appointment booked successfully!',
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).send({
-//             success: false,
-//             message: 'Error while booking appointment',
-//         });
-//     }
-// };
-
-// Get User Appointments Controller
+// Get User Appointments
 const userAppointmentsController = async (req, res) => {
     try {
         const appointments = await appointmentModel.find({ userId: req.user._id });
@@ -156,11 +109,10 @@ const checkAvailabilityController = async (req, res) => {
             doctorId,
             date,
             time,
-            status: { $ne: 'cancelled' } // <-- THIS IS THE FIX
+            status: { $ne: 'cancelled' } 
         });
 
         if (existingAppointment) {
-            // If an active appointment is found, the slot is not available
             return res.status(200).send({
                 success: false,
                 message: 'This time slot is already booked.'
@@ -181,11 +133,12 @@ const checkAvailabilityController = async (req, res) => {
         });
     }
 };
+
+// For Appointment Cancel
 const cancelAppointmentController = async (req, res) => {
     try {
         const { appointmentId } = req.body;
         const userId = req.user._id;
-
         const appointment = await appointmentModel.findById(appointmentId);
 
         if (!appointment) {

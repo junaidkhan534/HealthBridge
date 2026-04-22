@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Stethoscope, LayoutDashboard, User, Users,CreditCard,Plus, Calendar, Bell, LogOut, ChevronDown, Clock, Menu, X } from 'lucide-react';
+import { Stethoscope, LayoutDashboard, User, Users,CreditCard,Plus, Calendar, Bell, LogOut, ChevronDown, Clock, Menu, X, BedSingle } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { logout } from '../../redux/features/userSlice';
@@ -38,7 +38,6 @@ const AdminDashboard = () => {
         if (modifier && modifier.toUpperCase() === 'AM' && hours === 12) {
             hours = 0;
         }
-        // new Date(year, monthIndex, day, hours, minutes)
         return new Date(year, month - 1, day, hours, minutes);
     };
 
@@ -137,6 +136,10 @@ const AdminDashboard = () => {
                         <Plus className="w-5 h-5 mr-3" />
                         Add a Doctor
                     </Link>
+                    <Link to="/admin/ward" className="flex items-center px-6 py-3 text-slate-600 hover:bg-slate-100">
+                        <BedSingle className="w-5 h-5 mr-3" />
+                        Ward & Beds
+                    </Link>
                 </nav>
             </aside>
 
@@ -151,9 +154,9 @@ const AdminDashboard = () => {
                             </button>
                         </div>
                         <div className="flex items-center space-x-4">
-                            <button className="relative text-slate-500 hover:text-teal-600">
+                            {/* <button className="relative text-slate-500 hover:text-teal-600">
                                 <Bell className="h-6 w-6" />
-                            </button>
+                            </button> */}
                             <div className="relative">
                                 <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center space-x-2">
                                     <img src={previewPicture} alt="Admin" className="h-9 w-9 rounded-full object-cover" />
@@ -162,7 +165,8 @@ const AdminDashboard = () => {
                                 {showUserMenu && (
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                                         <Link to="/admin/profile" className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-teal-50"><User className="w-4 h-4 mr-2"/> My Profile</Link>
-                                        <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-teal-50"><LogOut className="w-4 h-4 mr-2"/> Logout</button>
+                                        <div className="h-px bg-slate-100 my-1"></div>
+                                        <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"><LogOut className="w-4 h-4 mr-3"/> Sign Out</button>
                                     </div>
                                 )}
                             </div>
@@ -173,19 +177,20 @@ const AdminDashboard = () => {
                 {/* Dashboard Content */}
                 <main className="flex-1 p-6 overflow-y-auto">
                     <div className="mb-1">
-                        <h2 className="text-3xl font-bold text-slate-800">Welcome back, {user?.name}</h2>
+                        <h2 className="text-2xl font-bold text-slate-800">Welcome back, {user?.name}</h2>
                     </div>
 
                     {/* Quick Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div className="bg-white p-6 rounded-lg shadow-md flex items-start"><div className="bg-teal-100 p-3 rounded-full mr-4"><User className="w-6 h-6 text-teal-600"/></div><div><p className="text-slate-600">Total Doctors</p><p className="text-3xl font-bold mt-5 pt-3 text-slate-900">{stats.totalDoctors}</p></div></div>
-                        <div className="bg-white p-6 rounded-lg shadow-md flex items-start"><div className="bg-blue-100 p-3 rounded-full mr-4"><Users className="w-6 h-6 text-blue-600"/></div><div><p className="text-slate-600">Total Patients</p><p className="text-3xl font-bold mt-5 pt-3 text-slate-900">{stats.totalPatients}</p></div></div>
-                        <div className="bg-white p-6 rounded-lg shadow-md flex items-start"><div className="bg-indigo-100 p-3 rounded-full mr-4"><Calendar className="w-6 h-6 text-indigo-600"/></div><div><p className="text-slate-600">Total Appointments</p><p className="text-3xl font-bold text-slate-900">{stats.totalAppointments}</p></div></div>
-                        <div className="bg-white p-6 rounded-lg shadow-md flex items-start"><div className="bg-amber-100 p-3 rounded-full mr-4"><Clock className="w-6 h-6 text-amber-600"/></div><div><p className="text-slate-600">Today's Appointments</p><p className="text-3xl font-bold text-slate-900">{stats.appointmentsToday}</p></div></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        
+                        <div className="bg-white p-6 rounded-2xl shadow-md flex items-center"><div className="bg-teal-50 p-4 rounded-xl mr-4"><User className="w-5 h-5 text-teal-600"/></div><div><p className="text-xs font-bold text-slate-500 uppercase tracking-wider m-0">Total Doctors</p><p className="text-2xl font-black text-slate-800 m-0 mt-1">{stats.totalDoctors}</p></div></div>
+                        <div className="bg-white p-6 rounded-2xl shadow-md flex items-center"><div className="bg-blue-50 p-4 rounded-xl mr-4"><Users className="w-5 h-5 text-blue-600"/></div><div><p className="text-xs font-bold text-slate-500 uppercase tracking-wider m-0">Total Patients</p><p className="text-2xl font-black text-slate-800 m-0 mt-1">{stats.totalPatients}</p></div></div>
+                        <div className="bg-white p-6 rounded-2xl shadow-md flex items-center"><div className="bg-indigo-50 p-4 rounded-xl mr-4"><Calendar className="w-5 h-5 text-indigo-600"/></div><div><p className="text-xs font-bold text-slate-500 uppercase tracking-wider m-0">Total Appointments</p><p className="text-2xl font-black text-slate-800 m-0 mt-1">{stats.totalAppointments}</p></div></div>
+                        <div className="bg-white p-6 rounded-2xl shadow-md flex items-center"><div className="bg-amber-50 p-4 rounded-xl mr-4"><Clock className="w-5 h-5 text-amber-600"/></div><div><p className="text-xs font-bold text-slate-500 uppercase tracking-wider m-0">Today's Appointments</p><p className="text-2xl font-black text-slate-800 m-0 mt-1">{stats.appointmentsToday}</p></div></div>
                     </div>
 
                     {/* Upcoming Appointments Section */}
-                    <div className="bg-white p-6 rounded-lg shadow-md">
+                    <div className="bg-white p-6 rounded-2xl shadow-md">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-xl font-bold text-slate-800">Upcoming Appointments</h3>
                         </div>

@@ -48,34 +48,45 @@ const PatientManagementPage = () => {
     };
 
     const sortedAndFilteredPatients = useMemo(() => {
-        let filtered = patients.filter(patient => {
-            const searchLower = searchTerm.toLowerCase();
-            const age = calculateAge(patient.dob);
-            let ageMatch = true;
-            if (filters.ageGroup) {
-                const [min, max] = filters.ageGroup.split('-').map(Number);
-                ageMatch = age >= min && age <= (max || Infinity);
+    let filtered = patients.filter(patient => {
+        const searchLower = (searchTerm || "").toLowerCase();
+        const age = calculateAge(patient.dob);
+        
+        const nameMatch = (patient.name || "").toLowerCase().includes(searchLower);
+        
+        const emailMatch = (patient.email || "").toLowerCase().includes(searchLower);
+        
+        const idMatch = String(patient.patientId || "").toLowerCase().includes(searchLower);
+
+        let ageMatch = true;
+        if (filters.ageGroup) {
+            const [min, max] = filters.ageGroup.split('-').map(Number);
+            ageMatch = age >= min && age <= (max || Infinity);
+        }
+
+        const genderMatch = !filters.gender || patient.gender === filters.gender;
+
+        return (nameMatch || idMatch || emailMatch) && genderMatch && ageMatch;
+    });
+
+    if (sortConfig.key) {
+        filtered.sort((a, b) => {
+            let aValue = a[sortConfig.key] ?? "";
+            let bValue = b[sortConfig.key] ?? "";
+
+            if (sortConfig.key === 'registrationDate') {
+                aValue = new Date(aValue);
+                bValue = new Date(bValue);
             }
 
-            return (
-                (patient.name.toLowerCase().includes(searchLower) || (patient.patientId && patient.patientId.toLowerCase().includes(searchLower)) || patient.email.toLowerCase().includes(searchLower)) &&
-                (filters.gender === '' || patient.gender === filters.gender) &&
-                ageMatch
-            );
+            if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
+            return 0;
         });
+    }
 
-        if (sortConfig.key) {
-            filtered.sort((a, b) => {
-                const aValue = sortConfig.key === 'registrationDate' ? new Date(a[sortConfig.key]) : a[sortConfig.key];
-                const bValue = sortConfig.key === 'registrationDate' ? new Date(b[sortConfig.key]) : b[sortConfig.key];
-                
-                if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
-                if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
-                return 0;
-            });
-        }
-        return filtered;
-    }, [patients, searchTerm, filters, sortConfig]);
+    return filtered;
+}, [patients, searchTerm, filters, sortConfig]);
 
     const requestSort = (key) => {
         let direction = 'ascending';
@@ -112,11 +123,11 @@ const PatientManagementPage = () => {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        {/* <select name="gender" value={filters.gender} onChange={handleFilterChange} className="w-full px-3 py-2 border border-slate-300 rounded-md">
+                        <select name="gender" value={filters.gender} onChange={handleFilterChange} className="w-full px-3 py-2 border border-slate-300 rounded-md">
                             <option value="">All Genders</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
-                        </select> */}
+                        </select>
                         <select name="ageGroup" value={filters.ageGroup} onChange={handleFilterChange} className="w-full px-3 py-2 border border-slate-300 rounded-md">
                             <option value="">All Ages</option>
                             <option value="0-18">0-18</option>
@@ -145,13 +156,25 @@ const PatientManagementPage = () => {
                                 ) : sortedAndFilteredPatients.length > 0 ? (
                                     sortedAndFilteredPatients.map(patient => (
                                         <tr key={patient._id} className="border-b hover:bg-slate-50">
-                                            <td className="p-3 font-mono text-xs text-slate-500">{patient.patientId || 'N/A'}</td>
+                                            <td className="p-3 font-mono text-sm">
+                                                {patient.patientId ? (
+                                                    <Link 
+                                                        to={`/doctor/patient-history/${patient.patientId}`} 
+                                                        className="text-slate-600 font-bold hover:text-teal-800 hover:underline cursor-pointer"
+                                                        title="View Patient History"
+                                                    >
+                                                        {patient.patientId}
+                                                    </Link>
+                                                        ) : (
+                                                                <span className="text-slate-400 italic">N/A</span>
+                                                            )}
+                                                    </td>
                                             <td className="p-3 font-semibold text-slate-800">{patient.name}</td>
                                             <td className="p-3 text-sm">
                                                 <p>{patient.email}</p>
                                                 <p className="text-slate-500">{patient.phone}</p>
                                             </td>
-                                            <td className="p-3 text-sm">{patient.gender}</td>
+                                            <td className="p-3 text-sm">{patient.gender || 'N/A'} </td>
                                             <td className="p-3 text-sm">{calculateAge(patient.dob)}</td>
                                             <td className="p-3 text-sm">{patient.address || 'N/A'}</td>
                                             {/* <td className="p-3 text-center">

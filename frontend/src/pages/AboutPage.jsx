@@ -100,12 +100,12 @@ const AboutPage = () => {
                              <div className="flex flex-col items-center">
                                 <Mail className="w-8 h-8 text-teal-600"/>
                                 <h3 className="mt-2 font-semibold">Email</h3>
-                                <p className="text-slate-600">support@healthbridge.com</p>
+                                <p className="text-slate-600">jkhan78908@gmail.com</p>
                             </div>
                              <div className="flex flex-col items-center">
                                 <MapPin className="w-8 h-8 text-teal-600"/>
                                 <h3 className="mt-2 font-semibold">Address</h3>
-                                <p className="text-slate-600">123 HealthBridge,  City</p>
+                                <p className="text-slate-600">123 HealthBridge,  City-Bareilly</p>
                             </div>
                         </div>
                     </div>

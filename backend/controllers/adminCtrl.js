@@ -1,8 +1,9 @@
 const userModel = require('../models/userModel');
 const appointmentModel = require('../models/appointmentModel');
+const wardModel = require('../models/wardModel');
 const bcrypt = require('bcryptjs');
 
-// Get all users
+// Get all users/patient
 const getAllUsersController = async (req, res) => {
     try {
         const users = await userModel.find({ role: 'patient' });
@@ -18,11 +19,8 @@ const getAllUsersController = async (req, res) => {
 };
 
 // Get all doctors
-// In appointy-backend/controllers/adminCtrl.js
-
 const getAllDoctorsController = async (req, res) => {
     try {
-        // Find all users with the role 'doctor' and send the full object
         const doctors = await userModel.find({ role: 'doctor' });
         
         res.status(200).send({
@@ -36,36 +34,10 @@ const getAllDoctorsController = async (req, res) => {
     }
 };
 
-// Change account status (Approve Doctor)
-// const changeAccountStatusController = async (req, res) => {
-    // try {
-    //     const { doctorId, status } = req.body;
-    //     const doctor = await userModel.findByIdAndUpdate(doctorId, { status });
-        
-    //     // Notify the user about the status change
-    //     const user = await userModel.findOne({ _id: doctor.userId }); // Assuming doctor model has userId ref
-    //     user.notification.push({
-    //         type: 'doctor-account-request-updated',
-    //         message: `Your doctor account request has been ${status}`,
-    //         onClickPath: '/notification'
-    //     });
-    //     await user.save();
 
-    //     res.status(201).send({
-    //         success: true,
-    //         message: 'Account status updated successfully',
-    //         data: doctor,
-    //     });
-    // } catch (error) {
-    //     console.log(error);
-    //     res.status(500).send({ success: false, message: 'Error in changing account status' });
-    // }
-// };
-// --- NEW: Get All Appointments Controller ---
-// In appointy-backend/controllers/adminCtrl.js
+// Get All Appointments Controller 
 const getAllAppointmentsController = async (req, res) => {
     try {
-        // This .sort({ createdAt: -1 }) is the crucial part
         const appointments = await appointmentModel.find().sort({ createdAt: -1 });
 
         res.status(200).send({
@@ -79,9 +51,7 @@ const getAllAppointmentsController = async (req, res) => {
     }
 };
 
-// --- NEW: Update Admin Profile Controller ---
-// In appointy-backend/controllers/adminCtrl.js
-
+// Update Admin Profile
 const updateAdminProfileController = async (req, res) => {
     try {
         const { name, phone, email } = req.body;
@@ -96,7 +66,6 @@ const updateAdminProfileController = async (req, res) => {
         user.phone = phone || user.phone;
         user.email = email || user.email;
 
-        // Correctly update the 'profilePicture' field
         if (req.file) {
             user.profilePicture = req.file.path; 
         }
@@ -113,41 +82,11 @@ const updateAdminProfileController = async (req, res) => {
 };
 
 
-
-// --- NEW: Change Admin Password Controller ---
-const changeAdminPasswordController = async (req, res) => {
-    try {
-        const { oldPassword, newPassword } = req.body;
-        const user = await userModel.findById(req.user._id);
-
-        // Check if old password matches
-        const isMatch = await bcrypt.compare(oldPassword, user.password);
-        if (!isMatch) {
-            return res.status(400).send({ success: false, message: 'Incorrect old password.' });
-        }
-
-        // Hash and save the new password
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
-        await user.save();
-
-        res.status(200).send({ success: true, message: 'Password changed successfully!' });
-    } catch (error) {
-        console.log(error);
-        res.status(500).send({ success: false, message: 'Error changing password.' });
-    }
-};
-// In appointy-backend/controllers/adminCtrl.js
-
-// In appointy-backend/controllers/adminCtrl.js
-// appointy-backend/controllers/adminCtrl.js
-
-// In appointy-backend/controllers/adminCtrl.js
-
+// For to add new doctor
 const addDoctorController = async (req, res) => {
     try {
         const { 
-            doctorId, // <-- Add doctorId here
+            doctorId,
             name, email, password, phone, gender, dob,
             specialty, qualifications, experience, fees, address, bio,
             availableDays, startTime1, endTime1, startTime2, endTime2 
@@ -187,10 +126,9 @@ const addDoctorController = async (req, res) => {
         res.status(500).send({ success: false, message: 'Error while adding doctor. Check server logs for details.' });
     }
 };
-// --- NEW: Get All Payments (Appointments) Controller ---
+// Get All Payments Info
 const getAllPaymentsController = async (req, res) => {
     try {
-        // Fetch all appointments, as they contain the payment data
         const appointments = await appointmentModel.find({});
         res.status(200).send({
             success: true,
@@ -203,14 +141,91 @@ const getAllPaymentsController = async (req, res) => {
     }
 };
 
+// FOR ADDING NEW WARD
+const addWardController = async (req, res) => {
+    try {
+        const { name, totalBeds } = req.body;
+        
+        // Check if ward already exists
+        const existingWard = await wardModel.findOne({ name });
+        if (existingWard) {
+            return res.status(200).send({ success: false, message: "Ward already exists" });
+        }
+
+        // Auto-generate beds
+        const beds = Array.from({ length: totalBeds }, (_, i) => ({
+            bedNumber: `${name.substring(0, 3).toUpperCase()}-${i + 1}`,
+            status: 'available'
+        }));
+
+        const newWard = new wardModel({ name, totalBeds, beds });
+        await newWard.save();
+
+        res.status(201).send({
+            success: true,
+            message: "Ward Created Successfully",
+        });
+    } catch (error) {
+        res.status(500).send({ success: false, message: error.message });
+    }
+};
+
+// GET ALL WARDS
+const getAllWardsController = async (req, res) => {
+    try {
+        const wards = await wardModel.find({});
+        res.status(200).send({
+            success: true,
+            data: wards
+        });
+    } catch (error) {
+        res.status(500).send({ success: false, message: "Error fetching wards" });
+    }
+};
+
+// For update bed status
+const updateBedStatusController = async (req, res) => {
+    try {
+        const { wardId, bedId, status } = req.body;
+
+        const updatedWard = await wardModel.findOneAndUpdate(
+            { _id: wardId, "beds._id": bedId },
+            { 
+                $set: { "beds.$.status": status } 
+            },
+            { new: true }
+        );
+
+        if (!updatedWard) {
+            return res.status(404).send({
+                success: false,
+                message: "Ward or Bed not found"
+            });
+        }
+
+        res.status(200).send({
+            success: true,
+            message: `Bed status updated to ${status}`,
+            data: updatedWard
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({
+            success: false,
+            message: "Error while updating bed status",
+            error: error.message
+        });
+    }
+};
+
 module.exports = { 
     getAllUsersController,
     getAllDoctorsController,
-    // changeAccountStatusController,
     getAllAppointmentsController,
     updateAdminProfileController,
-    changeAdminPasswordController,
     addDoctorController,
-    getAllPaymentsController
-
+    getAllPaymentsController,
+    addWardController,
+    getAllWardsController,
+    updateBedStatusController
 };

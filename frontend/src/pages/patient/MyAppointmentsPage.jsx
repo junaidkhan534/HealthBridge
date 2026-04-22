@@ -93,7 +93,7 @@ const MyAppointmentsPage = () => {
                         <table className="w-full text-left">
                             <thead>
                                 <tr className="border-b bg-slate-50 text-sm">
-                                    <th className="p-3">Doctor</th>
+                                    <th className="p-3">Doctor Name</th>
                                     <th className="p-3">Date & Time</th>
                                     <th className="p-3">Payment Mode</th>
                                     <th className="p-3">Status</th>
@@ -123,7 +123,7 @@ const MyAppointmentsPage = () => {
                                                 </span>
                                             </td>
                                             <td className="p-3 text-center">
-                                                {appt.status !== 'completed' && appt.status !== 'cancelled' ? (
+                                                {appt.status !== 'completed' && appt.status !== 'cancelled' && appt.status !== '' ? (
                                                     <button 
                                                         onClick={() => handleCancelAppointment(appt._id)}
                                                         className="text-sm font-medium text-red-600 hover:text-red-800"

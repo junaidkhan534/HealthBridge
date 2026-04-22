@@ -9,16 +9,16 @@ const {
 
 const router = express.Router();
 
-// POST || Book a new appointment
+// Book a new appointment
 router.post('/book-appointment', protect, bookAppointmentController);
 
-// GET || Get all appointments for a user
+// Get all appointments for a user
 router.get('/user-appointments', protect, userAppointmentsController);
 
-// --- NEW: Check Availability Route (Protected) ---
+// Check Availability
 router.post('/check-availability', protect, checkAvailabilityController);
 
-// --- NEW: Cancel Appointment Route (Protected) ---
+// Cancel Appointment 
 router.post('/cancel-appointment', protect, cancelAppointmentController);
 
 

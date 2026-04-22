@@ -18,7 +18,6 @@ const AvailabilityPage = () => {
         timings: [{ start: '', end: '' }, { start: '', end: '' }]
     });
 
-    // This effect populates the form with the doctor current availability from  Redux state
     useEffect(() => {
         if (user) {
             setAvailability({
@@ -42,7 +41,6 @@ const AvailabilityPage = () => {
     };
 
     const handleTimeChange = (index, field, value) => {
-        // Corrected: Create a deep copy to avoid mutating state directly
         const newTimings = availability.timings.map((item, i) => {
             if (i === index) {
                 return { ...item, [field]: value };
@@ -93,7 +91,6 @@ const AvailabilityPage = () => {
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6">
                     <div className="bg-white p-8 rounded-lg shadow-md max-w-auto mx-auto">
                         <form onSubmit={handleSubmit}>
-                            {/* Availability Toggle */}
                             <div className="flex items-center justify-between border-b pb-6 mb-6">
                                 <div>
                                     <h2 className="text-lg font-bold text-slate-800">Your Availability Status</h2>

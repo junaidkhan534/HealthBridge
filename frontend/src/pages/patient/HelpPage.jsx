@@ -80,7 +80,7 @@ const HelpPage = () => {
                             </div>
                             <div className="flex items-center">
                                 <Mail className="w-5 h-5 text-teal-600 mr-3" />
-                                <span className="text-slate-700">support@healthbridge.com</span>
+                                <span className="text-slate-700">jkhan78909@gmail.com</span>
                             </div>
                         </div>
                     </div>

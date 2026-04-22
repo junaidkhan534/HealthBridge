@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Stethoscope, Calendar, User, Bell, LogOut, ChevronDown, Search, HelpCircle } from 'lucide-react';
+import { Stethoscope, Calendar, User, Bell, LogOut, ChevronDown, Search, HelpCircle, Pill } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
-import { message } from 'antd';
+import { message, Spin } from 'antd';
 import { logout } from '../../redux/features/userSlice';
 import toast from 'react-hot-toast';
+import { io } from 'socket.io-client';
+import { Badge } from 'antd';
+import { setUser } from '../../redux/features/userSlice';
 
 const PatientDashboard = () => {
     const { user, token } = useSelector(state => state.user);
@@ -18,8 +21,8 @@ const PatientDashboard = () => {
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    
     const [selectedSpecialty, setSelectedSpecialty] = useState('');
+    const [loading, setLoading] = useState(true);
 
     const parseAppointmentDateTime = (dateStr, timeStr) => {
         if (!dateStr || !timeStr) return null;
@@ -42,7 +45,11 @@ const PatientDashboard = () => {
     };
 
     const fetchData = async () => {
-        if (!token) return;
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+        setLoading(true); 
         try {
             const [appointmentsRes, doctorsRes] = await Promise.all([
                 axios.get('http://localhost:8080/api/v1/appointment/user-appointments', {
@@ -62,6 +69,8 @@ const PatientDashboard = () => {
             }
         } catch (error) {
             message.error('Failed to fetch dashboard data');
+        } finally {
+            setLoading(false); 
         }
     };
 
@@ -90,6 +99,40 @@ const PatientDashboard = () => {
         };
     }, []);
 
+    // for notification
+    useEffect(() => {
+        if (!user || !user.id) return;
+
+        const socket = io('http://localhost:8080'); 
+
+        socket.on('connect', () => {
+            socket.emit('joinPatientRoom', user.id.toString()); 
+        });
+
+        socket.on('appointmentStatusUpdated', async (data) => {
+            
+            if (data.message.includes('APPROVED')) {
+                toast.success(data.message, { icon: '✅', duration: 6000 });
+            } else {
+                toast.error(data.message, { icon: '❌', duration: 8000 });
+            }
+
+            try {
+                const res = await axios.post('http://localhost:8080/api/v1/user/getUserData', 
+                    {},
+                    { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+                );
+                
+                if (res.data.success) {
+                    dispatch(setUser(res.data.data)); 
+                }
+            } catch (error) {
+                console.log("Silent sync failed", error);
+            }
+        });
+
+        return () => socket.disconnect();
+    }, [user?.id]); 
     const handleLogout = () => {
         dispatch(logout());
         toast.success("Logout Successfully!")
@@ -113,6 +156,36 @@ const PatientDashboard = () => {
         });
     }, [doctors, selectedSpecialty, searchQuery]);
 
+    const handleMarkAllAsRead = async () => {
+    try {
+        const toastId = toast.loading("Updating notifications...");
+        const token = localStorage.getItem("token");
+
+        const res = await axios.post(
+            "http://localhost:8080/api/v1/user/get-all-notification",
+            { userId: user.id || user._id }, 
+            {
+                headers: { Authorization: `Bearer ${token}` },
+            }
+        );
+
+        toast.dismiss(toastId);
+
+        if (res.data.success) {
+            dispatch(setUser({
+                notification: res.data.data.notification,
+                seennotification: res.data.data.seennotification
+            }));
+            
+            toast.success("Notifications cleared");
+            setShowNotifications(false); 
+        }
+    } catch (error) {
+        toast.dismiss();
+        console.error("Error:", error);
+    }
+};
+
     return (
         <div className="min-h-screen bg-slate-100">
             {/* Top Header */}
@@ -124,15 +197,58 @@ const PatientDashboard = () => {
                     </Link>
                     <div className="flex items-center space-x-4">
                         <div className="relative">
-                            <button onClick={(e) => { e.stopPropagation(); setShowNotifications(!showNotifications); setShowUserMenu(false); }} className="relative text-slate-500 hover:text-teal-600">
-                                <Bell className="h-6 w-6" />
-                            </button>
-                            {showNotifications && (
-                                <div className="absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg py-1 z-50">
-                                    {/* Notification content */}
-                                </div>
-                            )}
+    <button 
+        onClick={(e) => { 
+            e.stopPropagation(); 
+            setShowNotifications(!showNotifications); 
+            setShowUserMenu(false); 
+        }} 
+        className="relative text-slate-500 hover:text-teal-600 p-2"
+    >
+        {/* Bell and shows number of unread notifications */}
+        <Badge count={user?.notification?.length} overflowCount={99} size="small">
+            <Bell className="h-6 w-6" />
+        </Badge>
+    </button>
+
+    {showNotifications && (
+        <div className="absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+            <div className="px-4 py-2 border-b border-slate-100 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800 m-0">Notifications</h3>
+                <span className="text-xs font-bold bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">
+                    {user?.notification?.length || 0} New
+                </span>
+            </div>
+            
+            <div className="max-h-80 overflow-y-auto">
+                {user?.notification?.length > 0 ? (
+                    user.notification.map((notif, index) => (
+                        <div 
+                            key={index} 
+                            className="px-4 py-3  hover:bg-teal-100 border-b border-slate-50 cursor-pointer transition-colors"
+                            // onClick={() => {
+                            //     navigate(notif.onClickPath);
+                            //     setShowNotifications(false);
+                            // }}
+                        >
+                            <p className="text-sm font-semibold text-slate-700 m-0">{notif.message}</p>
                         </div>
+                    ))
+                ) : (
+                    <div className="px-4 py-6 text-center">
+                        <p className="text-sm text-slate-500 m-0">You have no new notifications.</p>
+                    </div>
+                )}
+            </div>
+            
+            {user?.notification?.length > 0 && (
+                <div className="p-2 border-t border-slate-100 text-center">
+                    <button className="text-xs font-bold text-teal-600 hover:underline" onClick={handleMarkAllAsRead}>Mark all as read</button>
+                </div>
+            )}
+        </div>
+    )}
+</div>
                         <div className="relative">
                             <button onClick={(e) => { e.stopPropagation(); setShowUserMenu(!showUserMenu); setShowNotifications(false); }} className="flex items-center space-x-2">
                                 <img src={user?.profilePicture || `https://ui-avatars.com/api/?name=${user?.name.replace(' ', '+')}&background=0D9488&color=fff`} alt="User Avatar" className="h-8 w-8 rounded-full object-cover" />
@@ -142,10 +258,11 @@ const PatientDashboard = () => {
                                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50">
                                     <Link to="/patient/profile" className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-teal-50"><User className="w-4 h-4 mr-2"/> My Profile</Link>
                                     <Link to="/my-appointments" className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-teal-50"><Calendar className="w-4 h-4 mr-2"/> My Appointments</Link>
+                                    <Link to={`/patient/pat-history/${user?.patientId}`}  className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-teal-50"><Pill className="w-4 h-4 mr-2"/> My Prescription</Link>
                                     <Link to="/find-doctor" className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-teal-50"><Search className="w-4 h-4 mr-2"/> Find a Doctor</Link>
                                     <Link to="/help" className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-teal-50"><HelpCircle className="w-4 h-4 mr-2"/> Help & Support</Link>
                                     <hr className="my-1"/>
-                                    <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-teal-50"><LogOut className="w-4 h-4 mr-2"/> Logout</button>
+                                    <button onClick={handleLogout} className="w-full text-left flex items-center px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"><LogOut className="w-4 h-4 mr-3"/> Sign Out</button>
                                 </div>
                             )}
                         </div>
@@ -154,6 +271,13 @@ const PatientDashboard = () => {
             </header>
             
             <main className="flex-1 p-6 overflow-y-auto">
+                {/* Checking loading state */}
+                {loading ? (
+                    <div className="flex justify-center items-center h-[60vh]">
+                        <Spin size="large" />
+                    </div>
+                ) : (
+                    <>
                  {/* New Top Section */}
                 <div className="grid grid-cols lg:grid-cols-3 mb-6">
                     <h1 className="text-2xl font-bold text-slate-900 mb-2">Book Your Appointment Now</h1>
@@ -212,6 +336,8 @@ const PatientDashboard = () => {
                         ))}
                     </div>
                 </div>
+                </>
+                )}
             </main>
         </div>
     );

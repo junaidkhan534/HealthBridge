@@ -1,6 +1,6 @@
 const express = require('express');
 const { protect, isDoctor } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware'); // Make sure to import this
+const upload = require('../middleware/uploadMiddleware');
 
 const {
     getDoctorAppointmentsController,
@@ -8,30 +8,53 @@ const {
     getMyPatientsController,
     updateAvailabilityController,
     getDoctorProfileController,
-    updateDoctorProfileController
+    updateDoctorProfileController,
+    createPrescriptionController,   
+    createDischargeSummaryController,
+    saveInPatientDataController,
+    getPatientHistoryController,
+    getAllIpdRecordsController
 } = require('../controllers/doctorCtrl');
+const { searchDoctorsWithAI } = require('../controllers/aiController');
+
+
 
 const router = express.Router();
 
-// GET || Get doctor's appointments
+// Get doctor appointments
 router.get('/getDoctorAppointments', protect, isDoctor, getDoctorAppointmentsController);
 
-// POST || Update appointment status
+//  Update appointment status
 router.post('/updateAppointmentStatus', protect, isDoctor, updateAppointmentStatusController);
 
-// --- NEW: Get My Patients Route (Protected) ---
+// Get My Patients
 router.get('/get-my-patients', protect, isDoctor, getMyPatientsController);
 
-// --- NEW: Update Availability Route (Protected) ---
+// Update Availability Route
 router.post('/update-availability', protect, isDoctor, updateAvailabilityController);
 
-// GET || Get doctor profile
+// Get doctor profile
 router.get('/profile', protect, isDoctor, getDoctorProfileController);
 
-// PUT || Update doctor profile
+// Update doctor profile
 router.put('/profile', protect, isDoctor, upload.single('profilePicture'), updateDoctorProfileController);
 
+// Create Prescription (Out-Patient)
+router.post('/create-prescription', protect, isDoctor, createPrescriptionController);
 
+// Create Discharge Summary (In-Patient)
+router.post('/create-discharge-summary', protect, isDoctor, createDischargeSummaryController);
+
+// Update In-Patient Data
+router.post("/save-inpatient-data", protect, isDoctor, saveInPatientDataController);
+
+// Get Patient Case History
+router.get("/patient-history/:patientId", protect, getPatientHistoryController);
+
+// get in- patient 
+router.get("/get-all-ipd-records", protect, getAllIpdRecordsController);
+
+router.post("/ai-search", searchDoctorsWithAI);
 
 
 module.exports = router;

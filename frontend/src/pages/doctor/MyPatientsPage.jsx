@@ -41,9 +41,13 @@ const MyPatientsPage = () => {
     };
 
     const sortedAndFilteredPatients = useMemo(() => {
-        let filtered = patients.filter(patient => 
-            patient.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
+        let filtered = patients.filter(patient => {
+            const searchLower = searchTerm.toLowerCase();
+            const matchesName = patient.name?.toLowerCase().includes(searchLower);
+            const matchesId = patient.patientId?.toLowerCase().includes(searchLower);
+            
+            return matchesName || matchesId;
+        });
 
         if (sortConfig.key) {
             filtered.sort((a, b) => {
@@ -82,14 +86,13 @@ const MyPatientsPage = () => {
             {/* Page Content */}
             <main className="flex-1 p-6">
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                    {/* Search Bar */}
                     <div className="mb-6">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"/>
                             <input 
                                 type="text"
-                                placeholder="Search by patient name..."
-                                className="w-full max-w-xs pl-10 pr-4 py-2 border border-slate-300 rounded-md"
+                                placeholder="Search"
+                                className="w-full max-w-xs pl-10 pr-4 py-2 border border-slate-300 rounded-md bg-slate-50"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -99,7 +102,7 @@ const MyPatientsPage = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="border-b bg-slate-50">
+                                <tr className="border-t border-b bg-slate-50">
                                     <th className="p-3">Patient ID</th>
                                     <th className="p-3 cursor-pointer hover:bg-slate-200" onClick={() => requestSort('name')}>Name</th>
                                     <th className="p-3">Contact</th>
@@ -115,7 +118,19 @@ const MyPatientsPage = () => {
                                 ) : sortedAndFilteredPatients.length > 0 ? (
                                     sortedAndFilteredPatients.map(patient => (
                                         <tr key={patient._id} className="border-b hover:bg-slate-50">
-                                            <td className="p-3 font-mono text-xs text-slate-500">{patient.patientId || 'N/A'}</td>
+                                            <td className="p-3 font-mono text-sm">
+                                                {patient.patientId ? (
+                                                    <Link 
+                                                        to={`/doctor/patient-history/${patient.patientId}`} 
+                                                        className="text-slate-600 font-bold hover:text-teal-800 hover:underline cursor-pointer"
+                                                        title="View Patient History"
+                                                    >
+                                                        {patient.patientId}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="text-slate-400 italic">N/A</span>
+                                                )}
+                                            </td>
                                             <td className="p-3 font-semibold">{patient.name}</td>
                                             <td className="p-3 text-sm">
                                                 <p>{patient.email}</p>

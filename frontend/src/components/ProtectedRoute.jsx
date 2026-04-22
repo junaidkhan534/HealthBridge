@@ -11,11 +11,7 @@ const ProtectedRoute = ({ children }) => {
         return children;
     } else {
         // If not authenticated
-            return <Navigate to="/" />;
-        // if(location.pathname.startsWith("/doctor")) {
-        //     return <Navigate to="/portal/login" />;
-        // } else {
-        // }
+        return <Navigate to="/" />;
     }
 };
 
