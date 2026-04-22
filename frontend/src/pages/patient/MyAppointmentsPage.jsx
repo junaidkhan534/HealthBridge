@@ -15,7 +15,9 @@ const MyAppointmentsPage = () => {
 
     const getAppointments = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/v1/appointment/user-appointments', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            `${API_URL}/api/v1/appointment/user-appointments`
+            const res = await axios.get(`${API_URL}/api/v1/appointment/user-appointments`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -43,7 +45,8 @@ const MyAppointmentsPage = () => {
     const handleCancelAppointment = async (appointmentId) => {
         if (window.confirm('Are you sure you want to cancel this appointment?')) {
             try {
-                const res = await axios.post('http://localhost:8080/api/v1/appointment/cancel-appointment', 
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+                const res = await axios.post(`${API_URL}/api/v1/appointment/cancel-appointment`, 
                     { appointmentId },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );

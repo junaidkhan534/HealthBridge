@@ -17,7 +17,8 @@ const DoctorAppointments = () => {
 
     const getAppointments = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/v1/doctor/getDoctorAppointments', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.get(`${API_URL}/api/v1/doctor/getDoctorAppointments`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -43,7 +44,8 @@ const DoctorAppointments = () => {
 
     const handleStatusUpdate = async (appointmentId, status) => {
         try {
-            const res = await axios.post('http://localhost:8080/api/v1/doctor/updateAppointmentStatus', 
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/doctor/updateAppointmentStatus`, 
                 { appointmentId, status },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

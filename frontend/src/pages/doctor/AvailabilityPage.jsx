@@ -54,7 +54,8 @@ const AvailabilityPage = () => {
         e.preventDefault();
         try {
             setLoading(true);
-            const res = await axios.post('http://localhost:8080/api/v1/doctor/update-availability', availability, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/doctor/update-availability`, availability, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {

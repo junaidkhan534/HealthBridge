@@ -41,13 +41,14 @@ const AdminDashboard = () => {
         return new Date(year, month - 1, day, hours, minutes);
     };
 
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
     const fetchDashboardData = async () => {
         if (!token) return;
         try {
             const [doctorsRes, patientsRes, appointmentsRes] = await Promise.all([
-                axios.get('http://localhost:8080/api/v1/admin/getAllDoctors', { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:8080/api/v1/admin/getAllUsers', { headers: { Authorization: `Bearer ${token}` } }),
-                axios.get('http://localhost:8080/api/v1/admin/getAllAppointments', { headers: { Authorization: `Bearer ${token}` } })
+                axios.get(`${API_URL}/api/v1/admin/getAllDoctors`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${API_URL}/api/v1/admin/getAllUsers`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${API_URL}/api/v1/admin/getAllAppointments`, { headers: { Authorization: `Bearer ${token}` } })
             ]);
 
             let appointmentsTodayCount = 0;

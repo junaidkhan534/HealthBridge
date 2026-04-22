@@ -64,7 +64,8 @@ const AdminProfilePage = () => {
                 formData.append('profilePicture', profilePictureFile);
             }
 
-            const profileRes = await axios.put('http://localhost:8080/api/v1/admin/profile', formData, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const profileRes = await axios.put(`${API_URL}/api/v1/admin/profile`, formData, {
                 headers: { 
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

@@ -81,7 +81,8 @@ const SymptomCheckerPage = () => {
         setError('');
 
         try {
-            const backendUrl = `http://localhost:8080/api/v1/doctor/ai-search`;
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const backendUrl = `${API_URL}/api/v1/doctor/ai-search`;
 
             const { data } = await axios.post(backendUrl, {
                 prompt: symptoms // Send the symptoms to your backend

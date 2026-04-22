@@ -18,7 +18,8 @@ const AppointmentsPage = () => {
 
     const getAppointments = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/v1/admin/getAllAppointments', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.get(`${API_URL}/api/v1/admin/getAllAppointments`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {

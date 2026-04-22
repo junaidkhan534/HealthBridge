@@ -21,7 +21,8 @@ const InPatientListPage = () => {
     // Fetch all IPD records for this doctor
     const getAllIpdRecords = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/v1/doctor/get-all-ipd-records', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.get(`${API_URL}/api/v1/doctor/get-all-ipd-records`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {

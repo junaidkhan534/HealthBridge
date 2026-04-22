@@ -73,7 +73,8 @@ const DoctorProfilePage = () => {
     }
 
     try {
-        const res = await axios.put('http://localhost:8080/api/v1/doctor/profile', formData, {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        const res = await axios.put(`${API_URL}/api/v1/doctor/profile`, formData, {
             headers: { 
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'multipart/form-data'

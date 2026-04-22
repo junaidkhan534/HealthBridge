@@ -119,8 +119,9 @@ const IpdRecordCard = ({ record, patientProfile, patientId, user, token, fetchRe
         currentStage: finalStage,
         isFinalized: isFinalized
       };
-
-      const res = await axios.post(`http://localhost:8080/api/v1/doctor/save-inpatient-data`, formattedData, {
+                  
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await axios.post(`${API_URL}/api/v1/doctor/save-inpatient-data`, formattedData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -541,7 +542,8 @@ const PatientIpdRecords = () => {
 
   const fetchRecords = async () => {
     try {
-      const res = await axios.get(`http://localhost:8080/api/v1/doctor/patient-history/${patientId}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await axios.get(`${API_URL}/api/v1/doctor/patient-history/${patientId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

@@ -20,7 +20,8 @@ const HBookingPage = () => {
 
     const getDoctorData = async () => {
         try {
-            const res = await axios.get(`http://localhost:8080/api/v1/user/getDoctorById/${params.doctorId}`);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.get(`${API_URL}/api/v1/user/getDoctorById/${params.doctorId}`);
             if (res.data.success) {
                 setDoctor(res.data.data);
             } else {

@@ -41,7 +41,12 @@ const DoctorDashboard = () => {
         // console.log(" Redux loaded! Booting up Socket for Doctor:", user.id);
         
         // Connect to the backend
-        const socket = io('http://localhost:8080'); 
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        // const socket = io('http://localhost:8080'); 
+        const socket = io(API_URL, {
+        withCredentials: true,
+        transports: ['websocket', 'polling'] 
+    });
 
         socket.emit('joinDoctorRoom', user.id.toString());
 
@@ -81,7 +86,8 @@ const DoctorDashboard = () => {
 
     const getDoctorData = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/v1/doctor/getDoctorAppointments', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.get(`${API_URL}/api/v1/doctor/getDoctorAppointments`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -159,7 +165,8 @@ const DoctorDashboard = () => {
 
     const processStatusUpdate = async (appointmentId, status, messageStr) => {
         try {
-            const res = await axios.post('http://localhost:8080/api/v1/doctor/updateAppointmentStatus', 
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/doctor/updateAppointmentStatus`, 
                 { appointmentId, status, cancelMessage: messageStr }, 
                 { headers: { Authorization: `Bearer ${token}` } }
             );

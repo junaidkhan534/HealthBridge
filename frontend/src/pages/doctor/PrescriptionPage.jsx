@@ -27,7 +27,8 @@ const PrescriptionPage = () => {
   useEffect(() => {
     const fetchDoctorProfile = async () => {
       try {
-        const res = await axios.get("http://localhost:8080/api/v1/doctor/profile", {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        const res = await axios.get(`${API_URL}/api/v1/doctor/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.data.success) {
@@ -103,8 +104,9 @@ const PrescriptionPage = () => {
         diagnosis: values.diagnosis,
         followUpDate: values.followUpDate ? values.followUpDate.format("YYYY-MM-DD") : null,
       };
-
-      const res = await axios.post("http://localhost:8080/api/v1/doctor/create-prescription", payload, {
+                                      
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await axios.post(`${API_URL}/api/v1/doctor/create-prescription`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

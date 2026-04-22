@@ -39,7 +39,8 @@ const VerifyOtp = () => {
         
         try {
             setLoading(true);
-            const res = await axios.post('http://localhost:8080/api/v1/user/verify-otp', payload);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/user/verify-otp`, payload);
             setLoading(false);
             
             if (res.data.success) {
@@ -58,7 +59,8 @@ const VerifyOtp = () => {
     const handleResendOtp = async () => {
         if (cooldown > 0) return; 
         try {
-            const res = await axios.post('http://localhost:8080/api/v1/user/resend-otp', { contact });
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/user/resend-otp`, { contact });
             if (res.data.success) {
                 toast.success("OTP has been resent!");
                 setCooldown(60); 

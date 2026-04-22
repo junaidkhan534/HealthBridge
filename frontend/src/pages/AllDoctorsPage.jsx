@@ -13,7 +13,8 @@ const AllDoctorsPage = () => {
 
     const fetchDoctors = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/v1/user/getAllDoctors');
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.get(`${API_URL}/api/v1/user/getAllDoctors`);
 
             if (res.data.success) {
                 setDoctors(res.data.data);

@@ -39,7 +39,8 @@ const Register = () => {
 
         try {
             setLoading(true);
-            const res = await axios.post('http://localhost:8080/api/v1/user/register', values);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/user/register`, values);
             setLoading(false);
 
             if (res.data.success) {

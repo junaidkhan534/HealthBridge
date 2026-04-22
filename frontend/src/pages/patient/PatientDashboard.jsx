@@ -51,11 +51,12 @@ const PatientDashboard = () => {
         }
         setLoading(true); 
         try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
             const [appointmentsRes, doctorsRes] = await Promise.all([
-                axios.get('http://localhost:8080/api/v1/appointment/user-appointments', {
+                axios.get(`${API_URL}/api/v1/appointment/user-appointments`, {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                axios.get('http://localhost:8080/api/v1/user/getAllDoctors', {
+                axios.get(`${API_URL}/api/v1/appointment/user-appointments`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);
@@ -103,9 +104,15 @@ const PatientDashboard = () => {
     useEffect(() => {
         if (!user || !user.id) return;
 
-        const socket = io('http://localhost:8080'); 
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+        // const socket = io('http://localhost:8080'); 
+        const socket = io(API_URL, {
+        withCredentials: true,
+        transports: ['websocket', 'polling'] 
+    });
 
         socket.on('connect', () => {
+            console.log("Real-time connection established!");
             socket.emit('joinPatientRoom', user.id.toString()); 
         });
 
@@ -118,7 +125,8 @@ const PatientDashboard = () => {
             }
 
             try {
-                const res = await axios.post('http://localhost:8080/api/v1/user/getUserData', 
+                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+                const res = await axios.post(`${API_URL}/api/v1/user/getUserData`, 
                     {},
                     { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
                 );
@@ -160,9 +168,10 @@ const PatientDashboard = () => {
     try {
         const toastId = toast.loading("Updating notifications...");
         const token = localStorage.getItem("token");
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
         const res = await axios.post(
-            "http://localhost:8080/api/v1/user/get-all-notification",
+            `${API_URL}/api/v1/user/get-all-notification`,
             { userId: user.id || user._id }, 
             {
                 headers: { Authorization: `Bearer ${token}` },

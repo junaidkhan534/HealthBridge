@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Stethoscope, User, Mail, Phone, Home, Calendar, Upload, Droplets,ArrowLeft } from 'lucide-react';
+import { Stethoscope, User, Mail, Phone, Home, Calendar, Upload, Droplets, ArrowLeft } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { message } from 'antd';
 import axios from 'axios';
@@ -68,63 +68,65 @@ const MyProfilePage = () => {
     };
 
     const validateInputs = () => {
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(profileData.email)) {
-        toast.error("Please enter a valid email address");
-        return false;
-    }
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(profileData.email)) {
+            toast.error("Please enter a valid email address");
+            return false;
+        }
 
-    // Phone validation
-    const phoneRegex = /^[0-9]{10}$/;
-    if (!phoneRegex.test(profileData.phone)) {
-        toast.error("Please enter a valid phone number");
-        return false;
-    }
+        // Phone validation
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(profileData.phone)) {
+            toast.error("Please enter a valid phone number");
+            return false;
+        }
 
         return true;
     };
 
     const handleSubmit = async (e) => {
-    e.preventDefault();
+        e.preventDefault();
 
-    if (!validateInputs()) return; 
+        if (!validateInputs()) return;
 
-    setLoading(true);
-    const formData = new FormData();
+        setLoading(true);
+        const formData = new FormData();
 
-    for (const key in profileData) {
-        formData.append(key, profileData[key]);
-    }
-
-    if (profilePictureFile) {
-        formData.append('profilePicture', profilePictureFile);
-    }
-
-    try {
-        const res = await axios.put('http://localhost:8080/api/v1/user/profile', formData, {
-            headers: { 
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'multipart/form-data'
-            }
-        });
-
-        if (res.data.success) {
-            const updatedUser = res.data.data;
-            dispatch(setUser({ user: updatedUser, token }));
-            setPreviewPicture(updatedUser.profilePicture);
-            message.success('Profile updated successfully!');
-            toast.success('Profile updated successfully!');
-        } else {
-            throw new Error(res.data.message);
+        for (const key in profileData) {
+            formData.append(key, profileData[key]);
         }
-    } catch (error) {
-        message.error(error.message || 'An error occurred.');
-        toast.error("Something Went Wrong");
-    } finally {
-        setLoading(false);
-    }
-};
+
+        if (profilePictureFile) {
+            formData.append('profilePicture', profilePictureFile);
+        }
+
+        try {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+            const res = await axios.put(`${API_URL}/api/v1/user/profile`, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            if (res.data.success) {
+                const updatedUser = res.data.data;
+                dispatch(setUser({ user: updatedUser, token }));
+                setPreviewPicture(updatedUser.profilePicture);
+                message.success('Profile updated successfully!');
+                toast.success('Profile updated successfully!');
+            } else {
+                throw new Error(res.data.message);
+            }
+        } catch (error) {
+            message.error(error.message || 'An error occurred.');
+            toast.error("Something Went Wrong");
+        } finally {
+            setLoading(false);
+        }
+    };
 
 
     return (
@@ -163,7 +165,7 @@ const MyProfilePage = () => {
                                 <label htmlFor="email" className="block text-sm font-medium text-slate-700">Email Address</label>
                                 <input type="email" name="email" id="email" value={profileData.email} onChange={handleChange} className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md" />
                             </div>
-                             <div>
+                            <div>
                                 <label htmlFor="phone" className="block text-sm font-medium text-slate-700">Contact Number</label>
                                 <input type="number" name="phone" id="phone" value={profileData.phone} onChange={handleChange} className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md" />
                             </div>
@@ -175,7 +177,7 @@ const MyProfilePage = () => {
                                 <label className="block text-sm font-medium text-slate-700">Age</label>
                                 <input type="text" value={age !== null ? `${age} years` : ''} disabled className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md bg-slate-100" />
                             </div>
-                             <div>
+                            <div>
                                 <label htmlFor="bloodGroup" className="block text-sm font-medium text-slate-700">Blood Group</label>
                                 <select name="bloodGroup" id="bloodGroup" value={profileData.bloodGroup} onChange={handleChange} className="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md">
                                     <option value="">Select...</option>

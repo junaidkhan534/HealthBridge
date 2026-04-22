@@ -21,7 +21,8 @@ const PatientOpdRecords = () => {
   };
   const fetchRecords = async () => {
     try {
-      const res = await axios.get(`http://localhost:8080/api/v1/doctor/patient-history/${patientId}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await axios.get(`${API_URL}/api/v1/doctor/patient-history/${patientId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

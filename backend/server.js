@@ -19,8 +19,11 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json()); 
+// app.use(cors());
+app.use(cors({
+  origin: ["https://health-bridge-seven-rho.vercel.app", "http://localhost:5173"]
+}));
+app.use(express.json());
 
 // SOCKET.IO SETUP 
 //  Create an HTTP server from the Express app
@@ -29,7 +32,10 @@ const server = http.createServer(app);
 // Initialize Socket.io with CORS allowing your React frontend
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Update if your frontend runs on a different port
+    origin: [
+      "https://health-bridge-seven-rho.vercel.app",
+      "http://localhost:5173"
+    ],
     methods: ["GET", "POST", "PUT", "DELETE"]
   }
 });
@@ -47,10 +53,10 @@ io.on('connection', (socket) => {
     console.log(` Doctor ${doctorId} joined their private notification room`);
   });
 
-  socket.on('joinPatientRoom', (patientId) => { 
+  socket.on('joinPatientRoom', (patientId) => {
     socket.join(patientId);
     console.log(` Patient ${patientId} joined their private notification room`);
-    });
+  });
 
   socket.on('disconnect', () => {
     console.log(' User disconnected:', socket.id);
@@ -59,7 +65,7 @@ io.on('connection', (socket) => {
 
 // Simple route for testing
 app.get('/', (req, res) => {
-    res.send('<h1>Welcome to Backend API</h1>');
+  res.send('<h1>Welcome to Backend API</h1>');
 });
 
 // API Routes
@@ -78,5 +84,5 @@ const PORT = process.env.PORT || 8080;
 
 
 server.listen(PORT, () => {
-    console.log(` Server & WebSockets are running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  console.log(` Server & WebSockets are running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });

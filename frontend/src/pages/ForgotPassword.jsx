@@ -19,7 +19,8 @@ const ForgotPassword = () => {
         e.preventDefault();
         try {
             setLoading(true);
-            const res = await axios.post('http://localhost:8080/api/v1/user/forgot-password', { 
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/user/forgot-password`, { 
                 contact: identifier 
             });
             setLoading(false);
@@ -42,7 +43,8 @@ const ForgotPassword = () => {
         const payload = { contact: identifier, otp, password };
         try {
             setLoading(true);
-            const res = await axios.post('http://localhost:8080/api/v1/user/reset-password-otp', payload);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/user/reset-password-otp`, payload);
             setLoading(false);
             if (res.data.success) {
                 toast.success("Password Reset Successfully!");

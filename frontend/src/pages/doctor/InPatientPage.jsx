@@ -44,7 +44,8 @@ const InPatientPage = () => {
   useEffect(() => {
   const fetchWards = async () => {
     try {
-      const res = await axios.get("http://localhost:8080/api/v1/admin/get-all-wards", {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const res = await axios.get(`${API_URL}/api/v1/admin/get-all-wards`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -91,8 +92,8 @@ const InPatientPage = () => {
         
         completeAppointment: true 
       };
-
-      const endpoint = "http://localhost:8080/api/v1/doctor/save-inpatient-data";
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const endpoint = `${API_URL}/api/v1/doctor/save-inpatient-data`;
 
       const res = await axios.post(endpoint, payload, {
         headers: { Authorization: `Bearer ${token}` }

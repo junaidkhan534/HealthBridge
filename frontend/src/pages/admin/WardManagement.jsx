@@ -22,7 +22,8 @@ const WardManagement = () => {
     const getWards = async () => {
         try {
             setLoading(true);
-            const res = await axios.get('http://localhost:8080/api/v1/admin/get-all-wards', {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.get(`${API_URL}/api/v1/admin/get-all-wards`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (res.data.success) {
@@ -47,7 +48,8 @@ const WardManagement = () => {
         }
         try {
             setLoading(true);
-            const res = await axios.post('http://localhost:8080/api/v1/admin/add-ward', newWardData, {
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/admin/add-ward`, newWardData, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setLoading(false);
@@ -66,7 +68,8 @@ const WardManagement = () => {
     };
     const handleUpdateBedStatus = async (wardId, bedId, newStatus) => {
         try {
-            const res = await axios.post('http://localhost:8080/api/v1/admin/update-bed-status',
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+            const res = await axios.post(`${API_URL}/api/v1/admin/update-bed-status`,
                 { wardId, bedId, status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
